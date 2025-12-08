@@ -496,7 +496,18 @@ UPDATE Items SET updatedBy='seed';
 UPDATE Orders SET updatedBy='seed';
 UPDATE Payments SET updatedBy='seed';
 
--- =========================
--- Seed complete
--- =========================
+ALTER TABLE Accounts 
+MODIFY COLUMN createdAt DATETIME NULL,
+MODIFY COLUMN updatedAt DATETIME NULL;
+
+-- Update existing rows with NULL audit fields to have current timestamp
+UPDATE Accounts 
+SET createdAt = COALESCE(createdAt, NOW()),
+    updatedAt = COALESCE(updatedAt, NOW())
+WHERE createdAt IS NULL OR updatedAt IS NULL;
+
+-- If you want to make them NOT NULL after updating data, uncomment below:
+-- ALTER TABLE Accounts 
+-- MODIFY COLUMN createdAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+-- MODIFY COLUMN updatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP;
 
