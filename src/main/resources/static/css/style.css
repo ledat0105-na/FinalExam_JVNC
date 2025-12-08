@@ -1,0 +1,729 @@
+/* --- UCOP BRAND VARIABLES --- */
+:root {
+    --ucop-primary: #1e3a8a;       /* Xanh Navy đậm - Sự tin cậy */
+    --ucop-secondary: #0f766e;     /* Xanh Teal - Sự tăng trưởng */
+    --ucop-accent: #f59e0b;        /* Vàng cam - Điểm nhấn hành động */
+    --bg-body: #f3f4f6;            /* Xám nhạt - Nền sạch sẽ */
+    --text-dark: #1f2937;
+    
+    /* Admin Dashboard Variables */
+    --admin-primary: #4f46e5;
+    --admin-primary-hover: #4338ca;
+    --admin-bg-body: #f1f5f9;
+    --admin-bg-card: #ffffff;
+    --admin-text-main: #0f172a;
+    --admin-text-muted: #64748b;
+    --admin-border-color: #e2e8f0;
+    
+    /* Staff Dashboard Variables */
+    --staff-primary: #059669;
+    --staff-primary-hover: #047857;
+    --staff-bg-body: #f0fdf4;
+    --staff-bg-card: #ffffff;
+    --staff-text-main: #0f172a;
+    --staff-text-muted: #64748b;
+    --staff-border-color: #d1fae5;
+}
+
+/* --- CẤU TRÚC CHUNG --- */
+body {
+    background-color: var(--bg-body);
+    font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    color: var(--text-dark);
+    padding-top: 70px; /* Khoảng cách để nội dung không bị che bởi navbar cố định */
+}
+
+/* --- NAVBAR (THANH ĐIỀU HƯỚNG) --- */
+.navbar {
+    background: linear-gradient(90deg, #1e3a8a 0%, #3b82f6 100%) !important;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    z-index: 1030 !important;
+    margin: 0 !important;
+}
+
+.navbar-brand {
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    font-size: 1.5rem;
+    color: #fff !important;
+}
+
+.nav-link {
+    font-weight: 500;
+    transition: all 0.2s;
+    color: rgba(255, 255, 255, 0.85) !important;
+}
+
+.nav-link:hover {
+    color: #fff !important;
+    transform: translateY(-1px);
+}
+
+.nav-link.active {
+    color: #fff !important;
+    font-weight: 600;
+}
+
+.navbar-text {
+    color: rgba(255, 255, 255, 0.85) !important;
+}
+
+.navbar-text .bi-person-circle {
+    font-size: 1.2rem;
+    vertical-align: middle;
+    margin-right: 5px;
+}
+
+/* --- DASHBOARD CARDS (CÁC KHỐI CHỨC NĂNG) --- */
+.card {
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+    overflow: hidden;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+}
+
+.card.bg-primary {
+    background: linear-gradient(135deg, #2563eb, #1d4ed8) !important;
+}
+
+.card.bg-success {
+    background: linear-gradient(135deg, #10b981, #047857) !important;
+}
+
+.card.bg-info {
+    background: linear-gradient(135deg, #0ea5e9, #0284c7) !important;
+    color: white !important;
+}
+
+.card-title {
+    font-weight: 700;
+    font-size: 1.25rem;
+    margin-bottom: 0.5rem;
+}
+
+.card-body i.bi {
+    opacity: 0.3 !important;
+}
+
+.card .btn-light {
+    color: var(--ucop-primary);
+    font-weight: 600;
+    border-radius: 30px;
+    padding: 8px 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    border: none;
+}
+
+.card .btn-light:hover {
+    background-color: #fff;
+    transform: scale(1.05);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+/* --- HƯỚNG DẪN SỬ DỤNG (SECTION DƯỚI) --- */
+.card-header {
+    background-color: #fff;
+    border-bottom: 1px solid #e5e7eb;
+    padding: 1rem 1.5rem;
+}
+
+.card-header h5 {
+    color: var(--ucop-primary);
+    font-weight: 600;
+}
+
+.list-unstyled li {
+    padding: 8px 0;
+    border-bottom: 1px dashed #e5e7eb;
+}
+
+.list-unstyled li:last-child {
+    border-bottom: none;
+}
+
+/* --- ALERTS --- */
+.alert {
+    border-radius: 10px;
+    border: none;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+/* --- LOGIN PAGE --- */
+.login-wrapper {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    max-width: 420px;
+    padding: 15px;
+}
+
+body.login-page {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.card-login {
+    background: white;
+    border-radius: 16px;
+    border: none;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.card-header-login {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 2rem;
+    text-align: center;
+    color: white;
+}
+
+.card-body-login {
+    padding: 2.5rem 2rem;
+}
+
+.form-control {
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+    font-size: 0.95rem;
+}
+
+.form-control:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.btn-login {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    color: white;
+    padding: 0.75rem;
+    border-radius: 8px;
+    font-weight: 600;
+    width: 100%;
+    transition: all 0.2s;
+}
+
+.btn-login:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.brand-icon {
+    font-size: 3rem;
+    margin-bottom: 0.5rem;
+    opacity: 0.9;
+}
+
+.register-link {
+    text-align: center;
+    margin-top: 1rem;
+}
+
+/* --- STAFF LOGIN --- */
+body.staff-login {
+    background-color: #f0fdf4;
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.staff-login .card-login {
+    border: 1px solid #a7f3d0;
+    box-shadow: 0 20px 25px -5px rgba(5, 150, 105, 0.1), 0 8px 10px -6px rgba(5, 150, 105, 0.1);
+}
+
+.staff-login .card-header-login {
+    background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+}
+
+.staff-login .form-control:focus {
+    border-color: #059669;
+    box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.1);
+}
+
+.staff-login .btn-login {
+    background-color: #059669;
+}
+
+.staff-login .btn-login:hover {
+    background-color: #047857;
+}
+
+/* --- ADMIN LOGIN --- */
+body.admin-login {
+    background-color: #f1f5f9;
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.admin-login .card-header-login {
+    background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
+}
+
+.admin-login .form-control:focus {
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+.admin-login .btn-login {
+    background-color: #4f46e5;
+}
+
+.admin-login .btn-login:hover {
+    background-color: #4338ca;
+}
+
+/* --- LOGIN CARD (REGISTER) --- */
+.login-card {
+    max-width: 450px;
+    margin: 5rem auto;
+    padding: 2.5rem;
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+.register-icon {
+    font-size: 3rem;
+    color: #667eea;
+}
+
+/* --- ADMIN DASHBOARD --- */
+body.admin-dashboard {
+    background-color: var(--admin-bg-body);
+    font-family: 'Inter', sans-serif;
+    color: var(--admin-text-main);
+    -webkit-font-smoothing: antialiased;
+    padding-top: 70px; /* Khoảng cách để nội dung không bị che bởi navbar cố định */
+}
+
+.admin-dashboard .navbar {
+    background-color: var(--admin-bg-card) !important;
+    border-bottom: 1px solid var(--admin-border-color);
+    padding: 0.8rem 0;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    z-index: 1030 !important;
+    margin: 0 !important;
+}
+
+.admin-dashboard .navbar-brand {
+    font-weight: 700;
+    color: var(--admin-primary) !important;
+    font-size: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.admin-dashboard .navbar-brand span {
+    color: var(--admin-text-main);
+    font-weight: 400;
+}
+
+.admin-dashboard .nav-link {
+    color: var(--admin-text-muted) !important;
+    font-weight: 500;
+    font-size: 0.95rem;
+    padding: 8px 16px !important;
+    border-radius: 6px;
+    transition: all 0.2s;
+}
+
+.admin-dashboard .nav-link:hover,
+.admin-dashboard .nav-link.active {
+    background-color: #eef2ff;
+    color: var(--admin-primary) !important;
+}
+
+.admin-dashboard .page-header {
+    margin-bottom: 2rem;
+    background: linear-gradient(135deg, #4f46e5 0%, #818cf8 100%);
+    padding: 2.5rem 2rem;
+    border-radius: 16px;
+    color: white;
+    box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.2);
+    position: relative;
+    overflow: hidden;
+}
+
+.admin-dashboard .page-header::after {
+    content: '';
+    position: absolute;
+    top: 0; right: 0; bottom: 0; left: 0;
+    background-image: radial-gradient(circle at 100% 0%, rgba(255,255,255,0.2) 0%, transparent 50%);
+}
+
+.admin-dashboard .stat-card {
+    background: var(--admin-bg-card);
+    border: 1px solid var(--admin-border-color);
+    border-radius: 12px;
+    padding: 1.5rem;
+    transition: transform 0.2s;
+}
+
+.admin-dashboard .stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.admin-dashboard .stat-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.admin-dashboard .action-card {
+    height: 100%;
+    border: none;
+    background: var(--admin-bg-card);
+    border-radius: 16px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    border: 1px solid transparent;
+}
+
+.admin-dashboard .action-card:hover {
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    transform: translateY(-5px);
+    border-color: #e0e7ff;
+}
+
+.admin-dashboard .action-card .card-body {
+    padding: 2rem;
+    z-index: 2;
+    position: relative;
+}
+
+.admin-dashboard .action-icon-bg {
+    position: absolute;
+    bottom: -20px;
+    right: -20px;
+    font-size: 8rem;
+    opacity: 0.05;
+    transform: rotate(-15deg);
+    z-index: 1;
+    color: var(--admin-text-main);
+}
+
+.admin-dashboard .btn-action {
+    width: 100%;
+    padding: 10px;
+    border-radius: 8px;
+    font-weight: 500;
+    background-color: #f8fafc;
+    color: var(--admin-primary);
+    border: 1px solid #e2e8f0;
+    transition: all 0.2s;
+}
+
+.admin-dashboard .btn-action:hover {
+    background-color: var(--admin-primary);
+    color: white;
+    border-color: var(--admin-primary);
+}
+
+/* --- STAFF DASHBOARD --- */
+body.staff-dashboard {
+    background-color: var(--staff-bg-body);
+    font-family: 'Inter', sans-serif;
+    color: var(--staff-text-main);
+    -webkit-font-smoothing: antialiased;
+    padding-top: 70px; /* Khoảng cách để nội dung không bị che bởi navbar cố định */
+}
+
+.staff-dashboard .navbar {
+    background-color: var(--staff-bg-card) !important;
+    border-bottom: 1px solid var(--staff-border-color);
+    padding: 0.8rem 0;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    z-index: 1030 !important;
+    margin: 0 !important;
+}
+
+.staff-dashboard .navbar-brand {
+    font-weight: 700;
+    color: var(--staff-primary) !important;
+    font-size: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.staff-dashboard .nav-link {
+    color: var(--staff-text-muted) !important;
+    font-weight: 500;
+    font-size: 0.95rem;
+    padding: 8px 16px !important;
+    border-radius: 6px;
+    transition: all 0.2s;
+}
+
+.staff-dashboard .nav-link:hover,
+.staff-dashboard .nav-link.active {
+    background-color: #d1fae5;
+    color: var(--staff-primary) !important;
+}
+
+.staff-dashboard .page-header {
+    margin-bottom: 2rem;
+    background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+    padding: 2.5rem 2rem;
+    border-radius: 16px;
+    color: white;
+    box-shadow: 0 10px 15px -3px rgba(5, 150, 105, 0.2);
+    position: relative;
+    overflow: hidden;
+}
+
+.staff-dashboard .page-header::after {
+    content: '';
+    position: absolute;
+    top: 0; right: 0; bottom: 0; left: 0;
+    background-image: radial-gradient(circle at 100% 0%, rgba(255,255,255,0.2) 0%, transparent 50%);
+}
+
+.staff-dashboard .stat-card {
+    background: var(--staff-bg-card);
+    border: 1px solid var(--staff-border-color);
+    border-radius: 12px;
+    padding: 1.5rem;
+    transition: transform 0.2s;
+}
+
+.staff-dashboard .stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.staff-dashboard .stat-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.staff-dashboard .action-card {
+    height: 100%;
+    border: none;
+    background: var(--staff-bg-card);
+    border-radius: 16px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    border: 1px solid transparent;
+}
+
+.staff-dashboard .action-card:hover {
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    transform: translateY(-5px);
+    border-color: #a7f3d0;
+}
+
+.staff-dashboard .action-card .card-body {
+    padding: 2rem;
+    z-index: 2;
+    position: relative;
+}
+
+.staff-dashboard .action-icon-bg {
+    position: absolute;
+    bottom: -20px;
+    right: -20px;
+    font-size: 8rem;
+    opacity: 0.05;
+    transform: rotate(-15deg);
+    z-index: 1;
+    color: var(--staff-text-main);
+}
+
+.staff-dashboard .btn-action {
+    width: 100%;
+    padding: 10px;
+    border-radius: 8px;
+    font-weight: 500;
+    background-color: #f0fdf4;
+    color: var(--staff-primary);
+    border: 1px solid #a7f3d0;
+    transition: all 0.2s;
+}
+
+.staff-dashboard .btn-action:hover {
+    background-color: var(--staff-primary);
+    color: white;
+    border-color: var(--staff-primary);
+}
+
+/* --- ADMIN PAGES (ACCOUNTS, AUDIT LOG) --- */
+body.admin-page {
+    background-color: #f1f5f9;
+    font-family: 'Inter', sans-serif;
+    color: #0f172a;
+    padding-top: 70px; /* Khoảng cách để nội dung không bị che bởi navbar cố định */
+}
+
+.admin-page .page-header {
+    background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+    padding: 2rem;
+    border-radius: 12px;
+    color: white;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.2);
+}
+
+.admin-page .card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.admin-page .table thead th {
+    background-color: #f8fafc;
+    color: #64748b;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.5px;
+    border-bottom: 2px solid #e2e8f0;
+    padding: 12px 16px;
+}
+
+.admin-page .table tbody td {
+    padding: 16px;
+    vertical-align: middle;
+    border-bottom: 1px solid #f1f5f9;
+    color: #334155;
+}
+
+.admin-page .badge {
+    font-weight: 500;
+    padding: 6px 10px;
+    border-radius: 6px;
+}
+
+.admin-page .btn-action {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+}
+
+/* --- AUDIT LOG PAGE --- */
+.audit-log-page .page-header {
+    background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+}
+
+.audit-log-page .table thead th {
+    font-size: 0.75rem;
+}
+
+.audit-log-page .table tbody td {
+    padding: 14px 16px;
+    font-size: 0.9rem;
+}
+
+/* --- ASSIGN ROLES PAGE --- */
+.role-option {
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 10px;
+    transition: all 0.2s;
+    background: white;
+}
+
+.role-option:hover {
+    border-color: #4f46e5;
+    background-color: #f5f7ff;
+}
+
+.role-option .form-check-input:checked {
+    background-color: #4f46e5;
+    border-color: #4f46e5;
+}
+
+/* --- INLINE STYLES (for icons) --- */
+.icon-large {
+    font-size: 3rem;
+    opacity: 0.5;
+}
+
+.icon-register {
+    font-size: 3rem;
+    color: #667eea;
+}
+
+/* --- BUTTONS --- */
+.btn-primary {
+    background: linear-gradient(135deg, #2563eb, #1d4ed8) !important;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 20px;
+    font-weight: 600;
+    transition: all 0.3s;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(37, 99, 235, 0.4);
+}
+
+/* --- RESPONSIVE --- */
+@media (max-width: 768px) {
+    .navbar-brand {
+        font-size: 1.2rem;
+    }
+    
+    .login-card {
+        margin: 2rem auto;
+        padding: 1.5rem;
+    }
+}

@@ -26,7 +26,7 @@ public class Item {
     @Column(nullable=false, length=50)
     private String unitName;
 
-    @Column(nullable=false, precision=18, scale=2)
+    @Column(nullable=false)
     private Double unitPrice;
 
     private Double weightKg;
