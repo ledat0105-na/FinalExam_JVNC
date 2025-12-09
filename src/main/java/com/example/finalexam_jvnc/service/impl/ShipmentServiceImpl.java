@@ -1,7 +1,9 @@
 package com.example.finalexam_jvnc.service.impl;
 
 import com.example.finalexam_jvnc.dto.ShipmentDTO;
+import com.example.finalexam_jvnc.model.Order;
 import com.example.finalexam_jvnc.model.Shipment;
+import com.example.finalexam_jvnc.repository.OrderRepository;
 import com.example.finalexam_jvnc.repository.ShipmentRepository;
 import com.example.finalexam_jvnc.service.ShipmentService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,6 +20,9 @@ public class ShipmentServiceImpl implements ShipmentService {
 
     @Autowired
     private ShipmentRepository shipmentRepository;
+    
+    @Autowired
+    private OrderRepository orderRepository;
 
     @Override
     public List<ShipmentDTO> getAllShipments() {
@@ -45,6 +50,29 @@ public class ShipmentServiceImpl implements ShipmentService {
         return shipmentRepository.findByStatus(status).stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public ShipmentDTO createShipment(Long orderId, String trackingNumber, String carrier, String status) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found with id: " + orderId));
+        
+        Shipment shipment = Shipment.builder()
+                .order(order)
+                .trackingNumber(trackingNumber)
+                .carrier(carrier)
+                .status(status != null ? status : "PENDING")
+                .build();
+        
+        if ("SHIPPED".equals(shipment.getStatus())) {
+            shipment.setShippedAt(LocalDateTime.now());
+        }
+        if ("DELIVERED".equals(shipment.getStatus())) {
+            shipment.setDeliveredAt(LocalDateTime.now());
+        }
+        
+        shipment = shipmentRepository.save(shipment);
+        return convertToDTO(shipment);
     }
 
     @Override

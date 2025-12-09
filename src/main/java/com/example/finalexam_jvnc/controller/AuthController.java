@@ -47,6 +47,9 @@ public class AuthController {
             return "redirect:/login";
         }
 
+        // Update last login time
+        accountService.updateLastLoginAt(loginDTO.getUsername());
+
         // Set session attributes based on role
         if ("ADMIN".equals(role)) {
             session.setAttribute("adminUsername", loginDTO.getUsername());

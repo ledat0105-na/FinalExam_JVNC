@@ -1,6 +1,9 @@
 package com.example.finalexam_jvnc.controller;
 
 import com.example.finalexam_jvnc.dto.*;
+import com.example.finalexam_jvnc.model.Refund;
+import com.example.finalexam_jvnc.repository.AccountRepository;
+import com.example.finalexam_jvnc.repository.RefundRepository;
 import com.example.finalexam_jvnc.service.*;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
@@ -13,6 +16,9 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 
 @Controller
@@ -58,6 +64,12 @@ public class AdminController {
     @Autowired
     private ReportService reportService;
 
+    @Autowired
+    private AccountRepository accountRepository;
+
+    @Autowired
+    private RefundRepository refundRepository;
+
     // Admin Login - kept for backward compatibility, but redirects to unified login
     @GetMapping("/login")
     public String showLoginPage() {
@@ -71,7 +83,48 @@ public class AdminController {
         if (adminUsername == null || !accountService.isAdmin(adminUsername)) {
             return "redirect:/login";
         }
+        
+        // Get statistics for dashboard
+        long totalUsers = 0;
+        long pendingRefunds = 0;
+        long todayAccess = 0;
+        
+        try {
+            totalUsers = accountRepository.count();
+        } catch (Exception e) {
+            totalUsers = 0;
+        }
+        
+        // Count pending refunds (PENDING or REQUESTED status)
+        try {
+            List<RefundDTO> pendingRefundsList = refundService.getRefundsByStatus("PENDING");
+            List<RefundDTO> requestedRefundsList = refundService.getRefundsByStatus("REQUESTED");
+            if (pendingRefundsList != null) {
+                pendingRefunds += pendingRefundsList.size();
+            }
+            if (requestedRefundsList != null) {
+                pendingRefunds += requestedRefundsList.size();
+            }
+        } catch (Exception e) {
+            // If there's an error, set to 0
+            pendingRefunds = 0;
+        }
+        
+        // Count accounts that logged in today
+        try {
+            LocalDate today = LocalDate.now();
+            LocalDateTime startOfDay = today.atStartOfDay();
+            LocalDateTime endOfDay = today.atTime(LocalTime.MAX);
+            Long count = accountRepository.countAccountsLoggedInToday(startOfDay, endOfDay);
+            todayAccess = count != null ? count : 0;
+        } catch (Exception e) {
+            todayAccess = 0;
+        }
+        
         model.addAttribute("adminUsername", adminUsername);
+        model.addAttribute("totalUsers", totalUsers);
+        model.addAttribute("pendingApprovals", pendingRefunds);
+        model.addAttribute("todayAccess", todayAccess);
         return "admin/dashboard-admin";
     }
 
@@ -86,6 +139,63 @@ public class AdminController {
         List<AccountDTO> accounts = adminService.getAllAccountsForAdmin();
         model.addAttribute("accounts", accounts);
         return "admin/accounts-list-admin";
+    }
+
+    // Show create account form
+    @GetMapping("/accounts/new")
+    public String showCreateAccountForm(HttpSession session, Model model) {
+        String adminUsername = (String) session.getAttribute("adminUsername");
+        if (adminUsername == null || !accountService.isAdmin(adminUsername)) {
+            return "redirect:/login";
+        }
+
+        model.addAttribute("availableRoles", List.of("ADMIN", "STAFF", "CUSTOMER"));
+        return "admin/account-create-admin";
+    }
+
+    // Handle create account
+    @PostMapping("/accounts/new")
+    public String createAccount(@RequestParam String username,
+                               @RequestParam String email,
+                               @RequestParam String password,
+                               @RequestParam String confirmPassword,
+                               @RequestParam(required = false) List<String> roleCodes,
+                               HttpSession session,
+                               RedirectAttributes redirectAttributes) {
+        String adminUsername = (String) session.getAttribute("adminUsername");
+        if (adminUsername == null || !accountService.isAdmin(adminUsername)) {
+            return "redirect:/login";
+        }
+
+        // Validate password confirmation
+        if (!password.equals(confirmPassword)) {
+            redirectAttributes.addFlashAttribute("error", "Mật khẩu xác nhận không khớp");
+            return "redirect:/admin/accounts/new";
+        }
+
+        // Validate password length
+        if (password.length() < 6) {
+            redirectAttributes.addFlashAttribute("error", "Mật khẩu phải có ít nhất 6 ký tự");
+            return "redirect:/admin/accounts/new";
+        }
+
+        // Validate roles
+        if (roleCodes == null || roleCodes.isEmpty()) {
+            redirectAttributes.addFlashAttribute("error", "Vui lòng chọn ít nhất một vai trò");
+            return "redirect:/admin/accounts/new";
+        }
+
+        try {
+            accountService.createAccount(username, email, password, roleCodes);
+            redirectAttributes.addFlashAttribute("success", "Tạo tài khoản thành công");
+            return "redirect:/admin/accounts";
+        } catch (IllegalArgumentException e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+            return "redirect:/admin/accounts/new";
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Tạo tài khoản thất bại: " + e.getMessage());
+            return "redirect:/admin/accounts/new";
+        }
     }
 
     // View account details with audit log

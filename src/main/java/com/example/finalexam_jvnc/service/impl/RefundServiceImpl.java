@@ -45,8 +45,8 @@ public class RefundServiceImpl implements RefundService {
         Refund refund = refundRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Refund not found with id: " + id));
         
-        if (!"PENDING".equals(refund.getStatus())) {
-            throw new RuntimeException("Only pending refunds can be approved");
+        if (!"PENDING".equals(refund.getStatus()) && !"REQUESTED".equals(refund.getStatus())) {
+            throw new RuntimeException("Only pending or requested refunds can be approved");
         }
         
         refund.setStatus("APPROVED");
@@ -60,8 +60,8 @@ public class RefundServiceImpl implements RefundService {
         Refund refund = refundRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Refund not found with id: " + id));
         
-        if (!"PENDING".equals(refund.getStatus())) {
-            throw new RuntimeException("Only pending refunds can be rejected");
+        if (!"PENDING".equals(refund.getStatus()) && !"REQUESTED".equals(refund.getStatus())) {
+            throw new RuntimeException("Only pending or requested refunds can be rejected");
         }
         
         refund.setStatus("REJECTED");
@@ -69,6 +69,33 @@ public class RefundServiceImpl implements RefundService {
             refund.setReason(refund.getReason() + " [Rejected: " + reason + "]");
         }
         refund.setCompletedAt(LocalDateTime.now());
+        refund = refundRepository.save(refund);
+        return convertToDTO(refund);
+    }
+
+    @Override
+    public RefundDTO updateRefundStatus(Long id, String status) {
+        Refund refund = refundRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Refund not found with id: " + id));
+        
+        // Validate status
+        List<String> validStatuses = List.of("PENDING", "REQUESTED", "APPROVED", "REJECTED", "PROCESSING", "COMPLETED", "CANCELLED");
+        if (!validStatuses.contains(status)) {
+            throw new RuntimeException("Invalid refund status: " + status);
+        }
+        
+        refund.setStatus(status);
+        
+        // Set completedAt for terminal statuses
+        if ("APPROVED".equals(status) || "REJECTED".equals(status) || "COMPLETED".equals(status) || "CANCELLED".equals(status)) {
+            if (refund.getCompletedAt() == null) {
+                refund.setCompletedAt(LocalDateTime.now());
+            }
+        } else {
+            // Reset completedAt for non-terminal statuses
+            refund.setCompletedAt(null);
+        }
+        
         refund = refundRepository.save(refund);
         return convertToDTO(refund);
     }

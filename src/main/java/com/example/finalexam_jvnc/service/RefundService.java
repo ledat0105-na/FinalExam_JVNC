@@ -10,5 +10,6 @@ public interface RefundService {
     List<RefundDTO> getRefundsByStatus(String status);
     RefundDTO approveRefund(Long id);
     RefundDTO rejectRefund(Long id, String reason);
+    RefundDTO updateRefundStatus(Long id, String status);
 }
 

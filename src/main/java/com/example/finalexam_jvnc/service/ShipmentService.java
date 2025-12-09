@@ -9,6 +9,7 @@ public interface ShipmentService {
     ShipmentDTO getShipmentById(Long id);
     List<ShipmentDTO> getShipmentsByOrder(Long orderId);
     List<ShipmentDTO> getShipmentsByStatus(String status);
+    ShipmentDTO createShipment(Long orderId, String trackingNumber, String carrier, String status);
     ShipmentDTO updateShipmentStatus(Long id, String status, String trackingNumber, String carrier);
 }
 

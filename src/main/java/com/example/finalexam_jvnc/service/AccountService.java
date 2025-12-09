@@ -18,5 +18,7 @@ public interface AccountService {
     boolean validateCredentials(String username, String password);
     String getUserRole(String username);
     AccountDTO registerCustomer(String username, String email, String password);
+    void updateLastLoginAt(String username);
+    AccountDTO createAccount(String username, String email, String password, List<String> roleCodes);
 }
 

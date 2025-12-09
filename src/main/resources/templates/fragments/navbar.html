@@ -3,7 +3,9 @@
 <body>
     <nav th:fragment="navbar" class="navbar navbar-expand-lg navbar-dark">
         <div class="container-fluid">
-            <a class="navbar-brand" href="/dashboard">
+            <a class="navbar-brand" 
+               th:href="${session.adminUsername != null ? '/admin/dashboard' : (session.staffUsername != null ? '/staff/dashboard' : (session.customerUsername != null ? '/customer/dashboard' : '/dashboard'))}"
+               href="/dashboard">
                 <i class="bi bi-shield-check"></i> Final Exam
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" 
@@ -13,7 +15,9 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <a class="nav-link" th:classappend="${#httpServletRequest != null and #httpServletRequest.requestURI == '/dashboard' ? 'active' : ''}" 
+                        <a class="nav-link" 
+                           th:href="${session.adminUsername != null ? '/admin/dashboard' : (session.staffUsername != null ? '/staff/dashboard' : (session.customerUsername != null ? '/customer/dashboard' : '/dashboard'))}"
+                           th:classappend="${#httpServletRequest != null and (#httpServletRequest.requestURI == '/admin/dashboard' or #httpServletRequest.requestURI == '/staff/dashboard' or #httpServletRequest.requestURI == '/customer/dashboard' or #httpServletRequest.requestURI == '/dashboard') ? 'active' : ''}"
                            href="/dashboard">
                             <i class="bi bi-speedometer2"></i> Dashboard
                         </a>

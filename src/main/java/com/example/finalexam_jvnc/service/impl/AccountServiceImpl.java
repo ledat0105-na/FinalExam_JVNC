@@ -12,6 +12,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -244,6 +245,56 @@ public class AccountServiceImpl implements AccountService {
                 .updatedAt(account.getUpdatedAt())
                 .roleCodes(roleCodes)
                 .build();
+    }
+
+    @Override
+    public void updateLastLoginAt(String username) {
+        Account account = accountRepository.findByUsername(username)
+                .orElse(null);
+        
+        if (account != null) {
+            account.setLastLoginAt(LocalDateTime.now());
+            accountRepository.save(account);
+        }
+    }
+
+    @Override
+    @Transactional
+    public AccountDTO createAccount(String username, String email, String password, List<String> roleCodes) {
+        // Check if username already exists
+        if (accountRepository.findByUsername(username).isPresent()) {
+            throw new IllegalArgumentException("Username already exists");
+        }
+        
+        // Check if email already exists
+        if (accountRepository.findByEmail(email).isPresent()) {
+            throw new IllegalArgumentException("Email already exists");
+        }
+
+        // Validate password length
+        if (password == null || password.length() < 6) {
+            throw new IllegalArgumentException("Password must be at least 6 characters");
+        }
+
+        // Create new account
+        Account account = new Account();
+        account.setUsername(username);
+        account.setEmail(email);
+        account.setPasswordHash(passwordEncoder.encode(password));
+        account.setIsActive(true);
+        account.setIsLocked(false);
+
+        // Assign roles
+        Set<Role> roles = new HashSet<>();
+        for (String roleCode : roleCodes) {
+            Role role = roleRepository.findByRoleCode(roleCode)
+                    .orElseThrow(() -> new RuntimeException("Role not found: " + roleCode));
+            roles.add(role);
+        }
+        account.setRoles(roles);
+
+        Account savedAccount = accountRepository.save(account);
+        return convertToDTO(savedAccount);
     }
 }
 
