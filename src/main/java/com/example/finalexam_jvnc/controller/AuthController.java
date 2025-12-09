@@ -107,10 +107,8 @@ public class AuthController {
     // Logout Handler
     @GetMapping("/logout")
     public String logout(HttpSession session) {
-        if (session != null) {
-            session.invalidate();
-        }
-        return "redirect:/dashboard";
+        session.invalidate();
+        return "redirect:/login";
     }
 }
 

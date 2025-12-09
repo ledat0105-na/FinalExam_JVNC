@@ -69,8 +69,7 @@ public class AdminController {
     public String dashboard(HttpSession session, Model model) {
         String adminUsername = (String) session.getAttribute("adminUsername");
         if (adminUsername == null || !accountService.isAdmin(adminUsername)) {
-            session.invalidate();
-            return "redirect:/dashboard";
+            return "redirect:/login";
         }
         model.addAttribute("adminUsername", adminUsername);
         return "admin/dashboard-admin";

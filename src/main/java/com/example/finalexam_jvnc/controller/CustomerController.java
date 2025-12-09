@@ -20,10 +20,7 @@ public class CustomerController {
     public String dashboard(HttpSession session, Model model) {
         String customerUsername = (String) session.getAttribute("customerUsername");
         if (customerUsername == null) {
-            if (session != null) {
-                session.invalidate();
-            }
-            return "redirect:/dashboard";
+            return "redirect:/login";
         }
         model.addAttribute("customerUsername", customerUsername);
         return "customer/dashboard-customer";
