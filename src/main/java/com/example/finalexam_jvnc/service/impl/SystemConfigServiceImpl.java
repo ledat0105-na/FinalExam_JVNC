@@ -87,6 +87,22 @@ public class SystemConfigServiceImpl implements SystemConfigService {
         return getConfigValueAsDouble("GATEWAY_FEE", 0.0);
     }
 
+    @Override
+    public void deleteConfig(String key) {
+        SystemConfig config = systemConfigRepository.findByConfigKey(key)
+                .orElseThrow(() -> new RuntimeException("Config not found with key: " + key));
+        systemConfigRepository.delete(config);
+    }
+
+    @Override
+    public SystemConfigDTO toggleActive(String key) {
+        SystemConfig config = systemConfigRepository.findByConfigKey(key)
+                .orElseThrow(() -> new RuntimeException("Config not found with key: " + key));
+        config.setIsActive(!config.getIsActive());
+        config = systemConfigRepository.save(config);
+        return convertToDTO(config);
+    }
+
     private Double getConfigValueAsDouble(String key, Double defaultValue) {
         return systemConfigRepository.findByConfigKey(key)
                 .map(config -> {

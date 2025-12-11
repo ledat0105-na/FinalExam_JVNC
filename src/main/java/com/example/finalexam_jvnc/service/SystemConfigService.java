@@ -9,6 +9,8 @@ public interface SystemConfigService {
     SystemConfigDTO getConfigByKey(String key);
     SystemConfigDTO updateConfig(String key, String value);
     SystemConfigDTO createOrUpdateConfig(SystemConfigDTO configDTO);
+    void deleteConfig(String key);
+    SystemConfigDTO toggleActive(String key);
     Double getShippingFee();
     Double getTaxRate();
     Double getCodFee();

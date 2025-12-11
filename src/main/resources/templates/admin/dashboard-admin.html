@@ -50,20 +50,24 @@
         </div>
         <div class="col-md-3 col-sm-6">
             <div class="stat-card">
-                <div class="stat-icon bg-success bg-opacity-10 text-success">
-                    <i class="bi bi-hdd-network"></i>
-                </div>
-                <h6 class="text-muted text-uppercase small fw-bold ls-1">Hệ thống</h6>
-                <h3 class="fw-bold mb-0">Online</h3>
+                <a th:href="@{/admin/system-config}" class="text-decoration-none text-dark">
+                    <div class="stat-icon bg-success bg-opacity-10 text-success">
+                        <i class="bi bi-hdd-network"></i>
+                    </div>
+                    <h6 class="text-muted text-uppercase small fw-bold ls-1">Hệ thống</h6>
+                    <h3 class="fw-bold mb-0">Online</h3>
+                </a>
             </div>
         </div>
         <div class="col-md-3 col-sm-6">
             <div class="stat-card">
-                <div class="stat-icon bg-warning bg-opacity-10 text-warning">
-                    <i class="bi bi-shield-exclamation"></i>
-                </div>
-                <h6 class="text-muted text-uppercase small fw-bold ls-1">Cần duyệt</h6>
-                <h3 class="fw-bold mb-0" th:text="${pendingApprovals}">0</h3>
+                <a th:href="@{/admin/refunds}" class="text-decoration-none text-dark">
+                    <div class="stat-icon bg-warning bg-opacity-10 text-warning">
+                        <i class="bi bi-shield-exclamation"></i>
+                    </div>
+                    <h6 class="text-muted text-uppercase small fw-bold ls-1">Cần duyệt</h6>
+                    <h3 class="fw-bold mb-0" th:text="${pendingApprovals}">0</h3>
+                </a>
             </div>
         </div>
         <div class="col-md-3 col-sm-6">

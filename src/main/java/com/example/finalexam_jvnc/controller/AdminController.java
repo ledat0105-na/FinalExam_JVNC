@@ -542,5 +542,181 @@ public class AdminController {
         }
         return "redirect:/admin/warehouses";
     }
+
+    // ========== REFUND MANAGEMENT ==========
+
+    @GetMapping("/refunds")
+    public String listRefunds(HttpSession session,
+                              Model model,
+                              @RequestParam(required = false) String status) {
+        String adminUsername = (String) session.getAttribute("adminUsername");
+        if (adminUsername == null || !accountService.isAdmin(adminUsername)) {
+            return "redirect:/login";
+        }
+
+        List<com.example.finalexam_jvnc.dto.RefundDTO> refunds;
+        
+        // Filter by status if provided
+        if (status != null && !status.isEmpty()) {
+            refunds = refundService.getRefundsByStatus(status);
+        } else {
+            refunds = refundService.getAllRefunds();
+        }
+
+        model.addAttribute("refunds", refunds);
+        model.addAttribute("selectedStatus", status);
+        model.addAttribute("adminUsername", adminUsername);
+        return "admin/refunds-list";
+    }
+
+    @PostMapping("/refunds/{id}/update-status")
+    public String updateRefundStatus(@PathVariable Long id,
+                                    @RequestParam String status,
+                                    HttpSession session,
+                                    RedirectAttributes redirectAttributes) {
+        String adminUsername = (String) session.getAttribute("adminUsername");
+        if (adminUsername == null || !accountService.isAdmin(adminUsername)) {
+            return "redirect:/login";
+        }
+
+        try {
+            refundService.updateRefundStatus(id, status);
+            String statusName = getRefundStatusName(status);
+            redirectAttributes.addFlashAttribute("success", 
+                "Cập nhật trạng thái hoàn tiền thành công! Trạng thái mới: " + statusName);
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", 
+                "Lỗi khi cập nhật trạng thái: " + e.getMessage());
+        }
+
+        return "redirect:/admin/refunds";
+    }
+
+    private String getRefundStatusName(String status) {
+        return switch (status) {
+            case "PENDING" -> "Chờ xử lý";
+            case "REQUESTED" -> "Đã yêu cầu";
+            case "APPROVED" -> "Đã duyệt";
+            case "REJECTED" -> "Đã từ chối";
+            case "PROCESSING" -> "Đang xử lý";
+            case "COMPLETED" -> "Hoàn thành";
+            case "CANCELLED" -> "Đã hủy";
+            default -> status;
+        };
+    }
+
+    // ========== SYSTEM CONFIG MANAGEMENT ==========
+
+    @GetMapping("/system-config")
+    public String listSystemConfigs(HttpSession session, Model model) {
+        String adminUsername = (String) session.getAttribute("adminUsername");
+        if (adminUsername == null || !accountService.isAdmin(adminUsername)) {
+            return "redirect:/login";
+        }
+
+        List<SystemConfigDTO> configs = systemConfigService.getAllConfigs();
+        model.addAttribute("configs", configs);
+        model.addAttribute("adminUsername", adminUsername);
+        return "admin/system-config-list";
+    }
+
+    @PostMapping("/system-config/{key}/update")
+    public String updateSystemConfig(@PathVariable String key,
+                                    @RequestParam String value,
+                                    HttpSession session,
+                                    RedirectAttributes redirectAttributes) {
+        String adminUsername = (String) session.getAttribute("adminUsername");
+        if (adminUsername == null || !accountService.isAdmin(adminUsername)) {
+            return "redirect:/login";
+        }
+
+        try {
+            systemConfigService.updateConfig(key, value);
+            redirectAttributes.addFlashAttribute("success", 
+                "Cập nhật cấu hình hệ thống thành công!");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", 
+                "Lỗi khi cập nhật cấu hình: " + e.getMessage());
+        }
+
+        return "redirect:/admin/system-config";
+    }
+
+    @GetMapping("/system-config/new")
+    public String showCreateSystemConfigForm(HttpSession session, Model model) {
+        String adminUsername = (String) session.getAttribute("adminUsername");
+        if (adminUsername == null || !accountService.isAdmin(adminUsername)) {
+            return "redirect:/login";
+        }
+
+        model.addAttribute("config", new SystemConfigDTO());
+        model.addAttribute("adminUsername", adminUsername);
+        return "admin/system-config-form";
+    }
+
+    @PostMapping("/system-config")
+    public String createSystemConfig(@ModelAttribute SystemConfigDTO configDTO,
+                                    HttpSession session,
+                                    RedirectAttributes redirectAttributes) {
+        String adminUsername = (String) session.getAttribute("adminUsername");
+        if (adminUsername == null || !accountService.isAdmin(adminUsername)) {
+            return "redirect:/login";
+        }
+
+        try {
+            systemConfigService.createOrUpdateConfig(configDTO);
+            redirectAttributes.addFlashAttribute("success", 
+                "Tạo cấu hình hệ thống thành công!");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", 
+                "Lỗi khi tạo cấu hình: " + e.getMessage());
+            return "redirect:/admin/system-config/new";
+        }
+
+        return "redirect:/admin/system-config";
+    }
+
+    @PostMapping("/system-config/{key}/delete")
+    public String deleteSystemConfig(@PathVariable String key,
+                                    HttpSession session,
+                                    RedirectAttributes redirectAttributes) {
+        String adminUsername = (String) session.getAttribute("adminUsername");
+        if (adminUsername == null || !accountService.isAdmin(adminUsername)) {
+            return "redirect:/login";
+        }
+
+        try {
+            systemConfigService.deleteConfig(key);
+            redirectAttributes.addFlashAttribute("success", 
+                "Xóa cấu hình hệ thống thành công!");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", 
+                "Lỗi khi xóa cấu hình: " + e.getMessage());
+        }
+
+        return "redirect:/admin/system-config";
+    }
+
+    @PostMapping("/system-config/{key}/toggle-active")
+    public String toggleSystemConfigActive(@PathVariable String key,
+                                         HttpSession session,
+                                         RedirectAttributes redirectAttributes) {
+        String adminUsername = (String) session.getAttribute("adminUsername");
+        if (adminUsername == null || !accountService.isAdmin(adminUsername)) {
+            return "redirect:/login";
+        }
+
+        try {
+            SystemConfigDTO config = systemConfigService.toggleActive(key);
+            String status = config.getIsActive() ? "kích hoạt" : "vô hiệu hóa";
+            redirectAttributes.addFlashAttribute("success", 
+                "Đã " + status + " cấu hình hệ thống thành công!");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", 
+                "Lỗi khi cập nhật trạng thái: " + e.getMessage());
+        }
+
+        return "redirect:/admin/system-config";
+    }
 }
 
