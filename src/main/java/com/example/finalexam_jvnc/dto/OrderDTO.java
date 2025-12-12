@@ -19,6 +19,7 @@ public class OrderDTO {
     private String status;
     private String shippingAddress;
     private String billingAddress;
+    private String paymentMethod;
     private Double subtotal;
     private Double discountTotal;
     private Double taxAmount;
@@ -28,5 +29,11 @@ public class OrderDTO {
     private Double grandTotal;
     private Double amountDue;
     private LocalDateTime createdAt;
-}
 
+    private java.util.List<OrderItemDTO> items;
+    private java.util.List<ShipmentDTO> shipments;
+
+    // Refund info
+    private Long refundId;
+    private String refundStatus;
+}

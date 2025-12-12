@@ -727,3 +727,267 @@ body.admin-page {
         padding: 1.5rem;
     }
 }
+
+/* --- CUSTOMER WALLET PREMIUM CARD --- */
+.wallet-card-premium {
+    background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+    color: white;
+    border-radius: 20px;
+    padding: 2rem;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 10px 25px rgba(30, 58, 138, 0.3);
+}
+
+.wallet-card-premium::before {
+    content: '';
+    position: absolute;
+    top: -50px;
+    right: -50px;
+    width: 200px;
+    height: 200px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    z-index: 1;
+}
+
+.wallet-card-premium::after {
+    content: '';
+    position: absolute;
+    bottom: -30px;
+    left: -30px;
+    width: 150px;
+    height: 150px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 50%;
+    z-index: 1;
+}
+
+.wallet-content {
+    position: relative;
+    z-index: 2;
+}
+
+.wallet-balance {
+    font-size: 2.5rem;
+    font-weight: 800;
+    margin: 1rem 0;
+    letter-spacing: -1px;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.wallet-label {
+    opacity: 0.8;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 1px;
+    font-weight: 500;
+}
+
+/* --- PRODUCT CARDS (SHOP) --- */
+.product-card {
+    border: none;
+    border-radius: 16px;
+    transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
+    background: white;
+    overflow: hidden;
+    height: 100%;
+    position: relative;
+}
+
+.product-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+}
+
+.product-img-wrapper {
+    height: 220px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #f8fafc;
+    position: relative;
+}
+
+.product-img-wrapper img {
+    transition: transform 0.5s ease;
+    max-height: 100%;
+    width: auto;
+}
+
+.product-card:hover .product-img-wrapper img {
+    transform: scale(1.08);
+}
+
+.product-badge {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: rgba(255, 255, 255, 0.95);
+    padding: 6px 12px;
+    border-radius: 30px;
+    font-weight: 600;
+    font-size: 0.8rem;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    color: var(--ucop-primary);
+    z-index: 2;
+}
+
+.product-action-overlay {
+    position: absolute;
+    bottom: -50px;
+    left: 0;
+    right: 0;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 10px;
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    transition: bottom 0.3s ease;
+    backdrop-filter: blur(4px);
+}
+
+.product-card:hover .product-action-overlay {
+    bottom: 0;
+}
+
+.btn-product-action {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: white;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    color: var(--text-dark);
+    transition: all 0.2s;
+}
+
+.btn-product-action:hover {
+    background: var(--ucop-primary);
+    color: white;
+}
+
+/* --- ORDER TIMELINE (TRACKING) --- */
+.timeline-steps {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 30px;
+}
+
+.timeline-steps .step {
+    text-align: center;
+    position: relative;
+    padding: 0 20px;
+    color: #cbd5e1;
+    flex: 1;
+    min-width: 100px;
+}
+
+.timeline-steps .step .step-icon-wrap {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background-color: #f1f5f9;
+    color: #94a3b8;
+    margin: 0 auto 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    border: 3px solid #fff;
+    box-shadow: 0 0 0 2px #e2e8f0;
+    position: relative;
+    z-index: 2;
+    transition: all 0.3s;
+}
+
+.timeline-steps .step.active .step-icon-wrap {
+    background-color: var(--ucop-primary);
+    color: #fff;
+    box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.3);
+}
+
+.timeline-steps .step.completed .step-icon-wrap {
+    background-color: #10b981;
+    color: #fff;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.3);
+}
+
+.timeline-steps .step::before {
+    content: "";
+    position: absolute;
+    top: 25px;
+    left: -50%;
+    width: 100%;
+    height: 3px;
+    background-color: #e2e8f0;
+    z-index: 1;
+}
+
+.timeline-steps .step:first-child::before {
+    display: none;
+}
+
+.timeline-steps .step.completed::before,
+.timeline-steps .step.active::before {
+    background-color: #10b981;
+}
+
+.timeline-steps .step-title {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: #64748b;
+    margin-bottom: 0;
+}
+
+.timeline-steps .step.active .step-title {
+    color: var(--text-dark);
+}
+
+/* --- PROFILE HEADER --- */
+.profile-header-card {
+    background: white;
+    border-radius: 16px;
+    overflow: hidden;
+    position: relative;
+    border: none;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+}
+
+.profile-cover {
+    height: 120px;
+    background: linear-gradient(135deg, #a5b4fc 0%, #6366f1 100%);
+}
+
+.profile-avatar-wrap {
+    position: absolute;
+    top: 60px;
+    left: 40px;
+    padding: 4px;
+    background: white;
+    border-radius: 50%;
+}
+
+.profile-avatar {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background: #f3f4f6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3rem;
+    color: #9ca3af;
+    border: 1px solid #e5e7eb;
+}
+
+.profile-info {
+    padding-top: 50px;
+    padding-left: 40px;
+    padding-bottom: 20px;
+}

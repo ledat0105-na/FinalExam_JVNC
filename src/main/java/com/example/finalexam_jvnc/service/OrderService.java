@@ -1,13 +1,21 @@
 package com.example.finalexam_jvnc.service;
 
-import com.example.finalexam_jvnc.dto.OrderDTO;
-
-import java.util.List;
+import com.example.finalexam_jvnc.model.Order;
 
 public interface OrderService {
-    List<OrderDTO> getAllOrders();
-    OrderDTO getOrderById(Long id);
-    List<OrderDTO> getOrdersByStatus(String status);
-    OrderDTO updateOrderStatus(Long id, String status);
-}
+    Order createOrderFromCart(String username, String paymentMethod);
 
+    java.util.List<com.example.finalexam_jvnc.dto.OrderDTO> getOrdersByStatus(String status);
+
+    java.util.List<com.example.finalexam_jvnc.dto.OrderDTO> getAllOrders();
+
+    void updateOrderStatus(Long orderId, String status);
+
+    java.util.List<com.example.finalexam_jvnc.dto.OrderDTO> getOrdersByCustomer(String username);
+
+    com.example.finalexam_jvnc.dto.OrderDTO getOrderById(Long orderId);
+
+    void cancelOrder(Long orderId, String username);
+
+    void requestRefund(Long orderId, String username);
+}

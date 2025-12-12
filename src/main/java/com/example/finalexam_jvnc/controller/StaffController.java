@@ -61,21 +61,22 @@ public class StaffController {
         if (staffUsername == null || !accountService.isStaff(staffUsername)) {
             return "redirect:/login";
         }
-        
-        // Count new orders (PENDING status)
+
+        // Count new orders (PENDING_CONFIRMATION status)
         long newOrdersCount = 0;
         try {
-            List<OrderDTO> pendingOrders = orderService.getOrdersByStatus("PENDING");
+            List<OrderDTO> pendingOrders = orderService.getOrdersByStatus("PENDING_CONFIRMATION");
             newOrdersCount = pendingOrders != null ? pendingOrders.size() : 0;
         } catch (Exception e) {
             newOrdersCount = 0;
         }
-        
+
         // Count pending refunds (PENDING or REQUESTED status)
         long pendingRefundsCount = 0;
         try {
             List<com.example.finalexam_jvnc.dto.RefundDTO> pendingRefunds = refundService.getRefundsByStatus("PENDING");
-            List<com.example.finalexam_jvnc.dto.RefundDTO> requestedRefunds = refundService.getRefundsByStatus("REQUESTED");
+            List<com.example.finalexam_jvnc.dto.RefundDTO> requestedRefunds = refundService
+                    .getRefundsByStatus("REQUESTED");
             if (pendingRefunds != null) {
                 pendingRefundsCount += pendingRefunds.size();
             }
@@ -85,10 +86,10 @@ public class StaffController {
         } catch (Exception e) {
             pendingRefundsCount = 0;
         }
-        
+
         // Calculate total tasks (new orders + pending refunds)
         long totalTasksToday = newOrdersCount + pendingRefundsCount;
-        
+
         model.addAttribute("staffUsername", staffUsername);
         model.addAttribute("newOrdersCount", newOrdersCount);
         model.addAttribute("pendingRefundsCount", pendingRefundsCount);
@@ -106,21 +107,21 @@ public class StaffController {
 
         // Get all items
         List<ItemDTO> items = itemService.getAllItems();
-        
+
         // Get all stock items to calculate total stock per item
         List<StockItemDTO> stockItems = stockItemService.getAllStockItems();
-        
+
         // Create maps to store total stock per item
         Map<Long, Integer> totalStockMap = new HashMap<>();
         Map<Long, Integer> totalAvailableMap = new HashMap<>();
-        
+
         for (StockItemDTO stockItem : stockItems) {
             Long itemId = stockItem.getItemId();
-            totalStockMap.put(itemId, 
-                totalStockMap.getOrDefault(itemId, 0) + stockItem.getQuantityOnHand());
-            totalAvailableMap.put(itemId, 
-                totalAvailableMap.getOrDefault(itemId, 0) + 
-                (stockItem.getAvailableQuantity() != null ? stockItem.getAvailableQuantity() : 0));
+            totalStockMap.put(itemId,
+                    totalStockMap.getOrDefault(itemId, 0) + stockItem.getQuantityOnHand());
+            totalAvailableMap.put(itemId,
+                    totalAvailableMap.getOrDefault(itemId, 0) +
+                            (stockItem.getAvailableQuantity() != null ? stockItem.getAvailableQuantity() : 0));
         }
 
         model.addAttribute("items", items);
@@ -132,17 +133,17 @@ public class StaffController {
 
     // View Stock Management for Staff
     @GetMapping("/stock")
-    public String listStock(HttpSession session, 
-                            Model model,
-                            @RequestParam(required = false) Long warehouseId,
-                            @RequestParam(required = false) Long itemId) {
+    public String listStock(HttpSession session,
+            Model model,
+            @RequestParam(required = false) Long warehouseId,
+            @RequestParam(required = false) Long itemId) {
         String staffUsername = (String) session.getAttribute("staffUsername");
         if (staffUsername == null || !accountService.isStaff(staffUsername)) {
             return "redirect:/login";
         }
 
         List<StockItemDTO> stockItems;
-        
+
         // Filter by warehouse and/or item if provided
         if (warehouseId != null && itemId != null) {
             // Filter by both warehouse and item
@@ -172,9 +173,9 @@ public class StaffController {
 
     // Show Edit Stock Form
     @GetMapping("/stock/{id}/edit")
-    public String showEditStockForm(@PathVariable Long id, 
-                                   HttpSession session, 
-                                   Model model) {
+    public String showEditStockForm(@PathVariable Long id,
+            HttpSession session,
+            Model model) {
         String staffUsername = (String) session.getAttribute("staffUsername");
         if (staffUsername == null || !accountService.isStaff(staffUsername)) {
             return "redirect:/login";
@@ -189,10 +190,10 @@ public class StaffController {
     // Update Stock Quantity
     @PostMapping("/stock/{id}/update")
     public String updateStock(@PathVariable Long id,
-                             @RequestParam Integer quantityOnHand,
-                             @RequestParam(required = false) Integer lowStockThreshold,
-                             HttpSession session,
-                             RedirectAttributes redirectAttributes) {
+            @RequestParam Integer quantityOnHand,
+            @RequestParam(required = false) Integer lowStockThreshold,
+            HttpSession session,
+            RedirectAttributes redirectAttributes) {
         String staffUsername = (String) session.getAttribute("staffUsername");
         if (staffUsername == null || !accountService.isStaff(staffUsername)) {
             return "redirect:/login";
@@ -210,9 +211,9 @@ public class StaffController {
 
     // Show Import Stock Form
     @GetMapping("/stock/{id}/import")
-    public String showImportStockForm(@PathVariable Long id, 
-                                     HttpSession session, 
-                                     Model model) {
+    public String showImportStockForm(@PathVariable Long id,
+            HttpSession session,
+            Model model) {
         String staffUsername = (String) session.getAttribute("staffUsername");
         if (staffUsername == null || !accountService.isStaff(staffUsername)) {
             return "redirect:/login";
@@ -227,10 +228,10 @@ public class StaffController {
     // Process Import Stock
     @PostMapping("/stock/{id}/import")
     public String importStock(@PathVariable Long id,
-                             @RequestParam Integer quantity,
-                             @RequestParam(required = false) String note,
-                             HttpSession session,
-                             RedirectAttributes redirectAttributes) {
+            @RequestParam Integer quantity,
+            @RequestParam(required = false) String note,
+            HttpSession session,
+            RedirectAttributes redirectAttributes) {
         String staffUsername = (String) session.getAttribute("staffUsername");
         if (staffUsername == null || !accountService.isStaff(staffUsername)) {
             return "redirect:/login";
@@ -239,15 +240,15 @@ public class StaffController {
         try {
             StockItemDTO currentStock = stockItemService.getStockItemById(id);
             Integer newQuantity = currentStock.getQuantityOnHand() + quantity;
-            
+
             if (newQuantity < 0) {
                 redirectAttributes.addFlashAttribute("error", "Số lượng sau khi nhập không được âm!");
                 return "redirect:/staff/stock/" + id + "/import";
             }
-            
+
             stockItemService.updateStockQuantity(id, newQuantity, null);
-            redirectAttributes.addFlashAttribute("success", 
-                "Nhập kho thành công! Đã thêm " + quantity + " sản phẩm vào kho.");
+            redirectAttributes.addFlashAttribute("success",
+                    "Nhập kho thành công! Đã thêm " + quantity + " sản phẩm vào kho.");
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error", "Lỗi khi nhập kho: " + e.getMessage());
         }
@@ -257,9 +258,9 @@ public class StaffController {
 
     // Show Export Stock Form
     @GetMapping("/stock/{id}/export")
-    public String showExportStockForm(@PathVariable Long id, 
-                                     HttpSession session, 
-                                     Model model) {
+    public String showExportStockForm(@PathVariable Long id,
+            HttpSession session,
+            Model model) {
         String staffUsername = (String) session.getAttribute("staffUsername");
         if (staffUsername == null || !accountService.isStaff(staffUsername)) {
             return "redirect:/login";
@@ -274,10 +275,10 @@ public class StaffController {
     // Process Export Stock
     @PostMapping("/stock/{id}/export")
     public String exportStock(@PathVariable Long id,
-                             @RequestParam Integer quantity,
-                             @RequestParam(required = false) String note,
-                             HttpSession session,
-                             RedirectAttributes redirectAttributes) {
+            @RequestParam Integer quantity,
+            @RequestParam(required = false) String note,
+            HttpSession session,
+            RedirectAttributes redirectAttributes) {
         String staffUsername = (String) session.getAttribute("staffUsername");
         if (staffUsername == null || !accountService.isStaff(staffUsername)) {
             return "redirect:/login";
@@ -286,22 +287,22 @@ public class StaffController {
         try {
             StockItemDTO currentStock = stockItemService.getStockItemById(id);
             Integer availableQuantity = currentStock.getAvailableQuantity();
-            
+
             if (quantity <= 0) {
                 redirectAttributes.addFlashAttribute("error", "Số lượng xuất kho phải lớn hơn 0!");
                 return "redirect:/staff/stock/" + id + "/export";
             }
-            
+
             if (quantity > availableQuantity) {
-                redirectAttributes.addFlashAttribute("error", 
-                    "Số lượng xuất kho (" + quantity + ") vượt quá số lượng khả dụng (" + availableQuantity + ")!");
+                redirectAttributes.addFlashAttribute("error",
+                        "Số lượng xuất kho (" + quantity + ") vượt quá số lượng khả dụng (" + availableQuantity + ")!");
                 return "redirect:/staff/stock/" + id + "/export";
             }
-            
+
             Integer newQuantity = currentStock.getQuantityOnHand() - quantity;
             stockItemService.updateStockQuantity(id, newQuantity, null);
-            redirectAttributes.addFlashAttribute("success", 
-                "Xuất kho thành công! Đã xuất " + quantity + " sản phẩm khỏi kho.");
+            redirectAttributes.addFlashAttribute("success",
+                    "Xuất kho thành công! Đã xuất " + quantity + " sản phẩm khỏi kho.");
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error", "Lỗi khi xuất kho: " + e.getMessage());
         }
@@ -325,16 +326,16 @@ public class StaffController {
 
     // View Orders List for Staff
     @GetMapping("/orders")
-    public String listOrders(HttpSession session, 
-                            Model model,
-                            @RequestParam(required = false) String status) {
+    public String listOrders(HttpSession session,
+            Model model,
+            @RequestParam(required = false) String status) {
         String staffUsername = (String) session.getAttribute("staffUsername");
         if (staffUsername == null || !accountService.isStaff(staffUsername)) {
             return "redirect:/login";
         }
 
         List<OrderDTO> orders;
-        
+
         // Filter by status if provided
         if (status != null && !status.isEmpty()) {
             orders = orderService.getOrdersByStatus(status);
@@ -344,8 +345,7 @@ public class StaffController {
 
         // Define available statuses
         List<String> availableStatuses = List.of(
-            "PENDING", "PROCESSING", "SHIPPED", "DELIVERED", "DONE", "CANCELLED"
-        );
+                "PENDING_CONFIRMATION", "PROCESSING", "SHIPPED", "DELIVERED", "DONE", "CANCELLED");
 
         model.addAttribute("orders", orders);
         model.addAttribute("availableStatuses", availableStatuses);
@@ -357,9 +357,9 @@ public class StaffController {
     // Update Order Status
     @PostMapping("/orders/{id}/update-status")
     public String updateOrderStatus(@PathVariable Long id,
-                                    @RequestParam String status,
-                                    HttpSession session,
-                                    RedirectAttributes redirectAttributes) {
+            @RequestParam String status,
+            HttpSession session,
+            RedirectAttributes redirectAttributes) {
         String staffUsername = (String) session.getAttribute("staffUsername");
         if (staffUsername == null || !accountService.isStaff(staffUsername)) {
             return "redirect:/login";
@@ -368,11 +368,11 @@ public class StaffController {
         try {
             orderService.updateOrderStatus(id, status);
             String statusName = getStatusName(status);
-            redirectAttributes.addFlashAttribute("success", 
-                "Cập nhật trạng thái đơn hàng thành công! Trạng thái mới: " + statusName);
+            redirectAttributes.addFlashAttribute("success",
+                    "Cập nhật trạng thái đơn hàng thành công! Trạng thái mới: " + statusName);
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("error", 
-                "Lỗi khi cập nhật trạng thái: " + e.getMessage());
+            redirectAttributes.addFlashAttribute("error",
+                    "Lỗi khi cập nhật trạng thái: " + e.getMessage());
         }
 
         return "redirect:/staff/orders";
@@ -381,8 +381,8 @@ public class StaffController {
     // Create Shipment Form
     @GetMapping("/orders/{id}/create-shipment")
     public String showCreateShipmentForm(@PathVariable Long id,
-                                        HttpSession session,
-                                        Model model) {
+            HttpSession session,
+            Model model) {
         String staffUsername = (String) session.getAttribute("staffUsername");
         if (staffUsername == null || !accountService.isStaff(staffUsername)) {
             return "redirect:/login";
@@ -401,11 +401,11 @@ public class StaffController {
     // Create Shipment Handler
     @PostMapping("/orders/{id}/create-shipment")
     public String createShipment(@PathVariable Long id,
-                                @RequestParam String trackingNumber,
-                                @RequestParam String carrier,
-                                @RequestParam(required = false, defaultValue = "PENDING") String status,
-                                HttpSession session,
-                                RedirectAttributes redirectAttributes) {
+            @RequestParam String trackingNumber,
+            @RequestParam String carrier,
+            @RequestParam(required = false, defaultValue = "PENDING") String status,
+            HttpSession session,
+            RedirectAttributes redirectAttributes) {
         String staffUsername = (String) session.getAttribute("staffUsername");
         if (staffUsername == null || !accountService.isStaff(staffUsername)) {
             return "redirect:/login";
@@ -413,11 +413,11 @@ public class StaffController {
 
         try {
             shipmentService.createShipment(id, trackingNumber, carrier, status);
-            redirectAttributes.addFlashAttribute("success", 
-                "Tạo vận đơn thành công! Mã vận đơn: " + trackingNumber);
+            redirectAttributes.addFlashAttribute("success",
+                    "Tạo vận đơn thành công! Mã vận đơn: " + trackingNumber);
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("error", 
-                "Lỗi khi tạo vận đơn: " + e.getMessage());
+            redirectAttributes.addFlashAttribute("error",
+                    "Lỗi khi tạo vận đơn: " + e.getMessage());
         }
 
         return "redirect:/staff/orders";
@@ -426,15 +426,15 @@ public class StaffController {
     // View Refunds List for Staff
     @GetMapping("/refunds")
     public String listRefunds(HttpSession session,
-                              Model model,
-                              @RequestParam(required = false) String status) {
+            Model model,
+            @RequestParam(required = false) String status) {
         String staffUsername = (String) session.getAttribute("staffUsername");
         if (staffUsername == null || !accountService.isStaff(staffUsername)) {
             return "redirect:/login";
         }
 
         List<com.example.finalexam_jvnc.dto.RefundDTO> refunds;
-        
+
         // Filter by status if provided
         if (status != null && !status.isEmpty()) {
             refunds = refundService.getRefundsByStatus(status);
@@ -451,8 +451,8 @@ public class StaffController {
     // Approve Refund
     @PostMapping("/refunds/{id}/approve")
     public String approveRefund(@PathVariable Long id,
-                               HttpSession session,
-                               RedirectAttributes redirectAttributes) {
+            HttpSession session,
+            RedirectAttributes redirectAttributes) {
         String staffUsername = (String) session.getAttribute("staffUsername");
         if (staffUsername == null || !accountService.isStaff(staffUsername)) {
             return "redirect:/login";
@@ -460,11 +460,11 @@ public class StaffController {
 
         try {
             refundService.approveRefund(id);
-            redirectAttributes.addFlashAttribute("success", 
-                "Đã duyệt yêu cầu hoàn tiền thành công!");
+            redirectAttributes.addFlashAttribute("success",
+                    "Đã duyệt yêu cầu hoàn tiền thành công!");
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("error", 
-                "Lỗi khi duyệt yêu cầu hoàn tiền: " + e.getMessage());
+            redirectAttributes.addFlashAttribute("error",
+                    "Lỗi khi duyệt yêu cầu hoàn tiền: " + e.getMessage());
         }
 
         return "redirect:/staff/refunds";
@@ -473,9 +473,9 @@ public class StaffController {
     // Reject Refund
     @PostMapping("/refunds/{id}/reject")
     public String rejectRefund(@PathVariable Long id,
-                               @RequestParam(required = false) String reason,
-                               HttpSession session,
-                               RedirectAttributes redirectAttributes) {
+            @RequestParam(required = false) String reason,
+            HttpSession session,
+            RedirectAttributes redirectAttributes) {
         String staffUsername = (String) session.getAttribute("staffUsername");
         if (staffUsername == null || !accountService.isStaff(staffUsername)) {
             return "redirect:/login";
@@ -483,11 +483,11 @@ public class StaffController {
 
         try {
             refundService.rejectRefund(id, reason != null ? reason : "Không đủ điều kiện hoàn tiền");
-            redirectAttributes.addFlashAttribute("success", 
-                "Đã từ chối yêu cầu hoàn tiền thành công!");
+            redirectAttributes.addFlashAttribute("success",
+                    "Đã từ chối yêu cầu hoàn tiền thành công!");
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("error", 
-                "Lỗi khi từ chối yêu cầu hoàn tiền: " + e.getMessage());
+            redirectAttributes.addFlashAttribute("error",
+                    "Lỗi khi từ chối yêu cầu hoàn tiền: " + e.getMessage());
         }
 
         return "redirect:/staff/refunds";
@@ -496,9 +496,9 @@ public class StaffController {
     // Update Refund Status
     @PostMapping("/refunds/{id}/update-status")
     public String updateRefundStatus(@PathVariable Long id,
-                                    @RequestParam String status,
-                                    HttpSession session,
-                                    RedirectAttributes redirectAttributes) {
+            @RequestParam String status,
+            HttpSession session,
+            RedirectAttributes redirectAttributes) {
         String staffUsername = (String) session.getAttribute("staffUsername");
         if (staffUsername == null || !accountService.isStaff(staffUsername)) {
             return "redirect:/login";
@@ -507,11 +507,11 @@ public class StaffController {
         try {
             refundService.updateRefundStatus(id, status);
             String statusName = getRefundStatusName(status);
-            redirectAttributes.addFlashAttribute("success", 
-                "Cập nhật trạng thái hoàn tiền thành công! Trạng thái mới: " + statusName);
+            redirectAttributes.addFlashAttribute("success",
+                    "Cập nhật trạng thái hoàn tiền thành công! Trạng thái mới: " + statusName);
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("error", 
-                "Lỗi khi cập nhật trạng thái: " + e.getMessage());
+            redirectAttributes.addFlashAttribute("error",
+                    "Lỗi khi cập nhật trạng thái: " + e.getMessage());
         }
 
         return "redirect:/staff/refunds";
@@ -542,4 +542,3 @@ public class StaffController {
         };
     }
 }
-

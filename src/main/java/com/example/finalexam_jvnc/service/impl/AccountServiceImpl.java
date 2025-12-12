@@ -31,6 +31,9 @@ public class AccountServiceImpl implements AccountService {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    @Autowired
+    private com.example.finalexam_jvnc.repository.AccountProfileRepository accountProfileRepository;
+
     @Override
     public List<AccountDTO> getAllAccounts() {
         return accountRepository.findAllWithRoles().stream()
@@ -66,7 +69,8 @@ public class AccountServiceImpl implements AccountService {
     @Override
     public AccountDTO assignRoles(RoleAssignmentDTO roleAssignmentDTO) {
         Account account = accountRepository.findById(roleAssignmentDTO.getAccountId())
-                .orElseThrow(() -> new RuntimeException("Account not found with id: " + roleAssignmentDTO.getAccountId()));
+                .orElseThrow(
+                        () -> new RuntimeException("Account not found with id: " + roleAssignmentDTO.getAccountId()));
 
         Set<Role> roles = new HashSet<>();
         for (String roleCode : roleAssignmentDTO.getRoleCodes()) {
@@ -84,7 +88,7 @@ public class AccountServiceImpl implements AccountService {
     public boolean validateAdminCredentials(String username, String password) {
         Account account = accountRepository.findByUsername(username)
                 .orElse(null);
-        
+
         if (account == null) {
             return false;
         }
@@ -110,7 +114,7 @@ public class AccountServiceImpl implements AccountService {
     public boolean isAdmin(String username) {
         Account account = accountRepository.findByUsername(username)
                 .orElse(null);
-        
+
         if (account == null) {
             return false;
         }
@@ -123,7 +127,7 @@ public class AccountServiceImpl implements AccountService {
     public boolean validateStaffCredentials(String username, String password) {
         Account account = accountRepository.findByUsername(username)
                 .orElse(null);
-        
+
         if (account == null) {
             return false;
         }
@@ -149,7 +153,7 @@ public class AccountServiceImpl implements AccountService {
     public boolean isStaff(String username) {
         Account account = accountRepository.findByUsername(username)
                 .orElse(null);
-        
+
         if (account == null) {
             return false;
         }
@@ -162,7 +166,7 @@ public class AccountServiceImpl implements AccountService {
     public boolean validateCredentials(String username, String password) {
         Account account = accountRepository.findByUsername(username)
                 .orElse(null);
-        
+
         if (account == null) {
             return false;
         }
@@ -180,7 +184,7 @@ public class AccountServiceImpl implements AccountService {
     public String getUserRole(String username) {
         Account account = accountRepository.findByUsername(username)
                 .orElse(null);
-        
+
         if (account == null) {
             return null;
         }
@@ -195,8 +199,58 @@ public class AccountServiceImpl implements AccountService {
         if (account.getRoles().stream().anyMatch(role -> "CUSTOMER".equals(role.getRoleCode()))) {
             return "CUSTOMER";
         }
-        
+
         return null;
+    }
+
+    @Override
+    @Transactional
+    public com.example.finalexam_jvnc.dto.AccountProfileDTO getProfile(String username) {
+        Account account = accountRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("Account not found: " + username));
+
+        com.example.finalexam_jvnc.model.AccountProfile profile = accountProfileRepository
+                .findByAccount_Username(username)
+                .orElse(null);
+
+        com.example.finalexam_jvnc.dto.AccountProfileDTO dto = new com.example.finalexam_jvnc.dto.AccountProfileDTO();
+        dto.setUsername(account.getUsername());
+        dto.setEmail(account.getEmail());
+
+        if (profile != null) {
+            dto.setFullName(profile.getFullName());
+            dto.setPhoneNumber(profile.getPhoneNumber());
+            dto.setAddressLine(profile.getAddressLine());
+            dto.setCity(profile.getCity());
+            dto.setCountry(profile.getCountry());
+            dto.setDateOfBirth(profile.getDateOfBirth());
+        }
+
+        return dto;
+    }
+
+    @Override
+    @Transactional
+    public void updateProfile(String username, com.example.finalexam_jvnc.dto.AccountProfileDTO profileDTO) {
+        Account account = accountRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("Account not found: " + username));
+
+        com.example.finalexam_jvnc.model.AccountProfile profile = accountProfileRepository
+                .findByAccount_Username(username)
+                .orElse(new com.example.finalexam_jvnc.model.AccountProfile());
+
+        if (profile.getAccount() == null) {
+            profile.setAccount(account);
+        }
+
+        profile.setFullName(profileDTO.getFullName());
+        profile.setPhoneNumber(profileDTO.getPhoneNumber());
+        profile.setAddressLine(profileDTO.getAddressLine());
+        profile.setCity(profileDTO.getCity());
+        profile.setCountry(profileDTO.getCountry());
+        profile.setDateOfBirth(profileDTO.getDateOfBirth());
+
+        accountProfileRepository.save(profile);
     }
 
     @Override
@@ -206,7 +260,7 @@ public class AccountServiceImpl implements AccountService {
         if (accountRepository.findByUsername(username).isPresent()) {
             throw new IllegalArgumentException("Username already exists");
         }
-        
+
         // Check if email already exists
         if (accountRepository.findByEmail(email).isPresent()) {
             throw new IllegalArgumentException("Email already exists");
@@ -226,6 +280,13 @@ public class AccountServiceImpl implements AccountService {
         account.setRoles(new HashSet<>(Set.of(customerRole)));
 
         Account savedAccount = accountRepository.save(account);
+
+        // Create empty profile
+        com.example.finalexam_jvnc.model.AccountProfile profile = new com.example.finalexam_jvnc.model.AccountProfile();
+        profile.setAccount(savedAccount);
+        profile.setFullName(username); // Default full name
+        accountProfileRepository.save(profile);
+
         return convertToDTO(savedAccount);
     }
 
@@ -251,7 +312,7 @@ public class AccountServiceImpl implements AccountService {
     public void updateLastLoginAt(String username) {
         Account account = accountRepository.findByUsername(username)
                 .orElse(null);
-        
+
         if (account != null) {
             account.setLastLoginAt(LocalDateTime.now());
             accountRepository.save(account);
@@ -265,7 +326,7 @@ public class AccountServiceImpl implements AccountService {
         if (accountRepository.findByUsername(username).isPresent()) {
             throw new IllegalArgumentException("Username already exists");
         }
-        
+
         // Check if email already exists
         if (accountRepository.findByEmail(email).isPresent()) {
             throw new IllegalArgumentException("Email already exists");
@@ -296,5 +357,20 @@ public class AccountServiceImpl implements AccountService {
         Account savedAccount = accountRepository.save(account);
         return convertToDTO(savedAccount);
     }
-}
 
+    @Override
+    @Transactional
+    public void changePassword(String username, String currentPassword, String newPassword) {
+        Account account = accountRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("Account not found using: " + username));
+
+        // Check current password
+        if (!passwordEncoder.matches(currentPassword, account.getPasswordHash())) {
+            throw new IllegalArgumentException("Incorrect current password");
+        }
+
+        // Update to new password
+        account.setPasswordHash(passwordEncoder.encode(newPassword));
+        accountRepository.save(account);
+    }
+}

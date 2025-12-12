@@ -8,9 +8,14 @@ import java.util.List;
 
 @Entity
 @Table(name = "Carts")
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Cart {
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long cartId;
 
     @ManyToOne
@@ -19,5 +24,8 @@ public class Cart {
 
     private String status; // CART / CONVERTED / ABANDONED
     private LocalDateTime createdAt;
-}
 
+    @ManyToOne
+    @JoinColumn(name = "PromotionId")
+    private Promotion promotion;
+}

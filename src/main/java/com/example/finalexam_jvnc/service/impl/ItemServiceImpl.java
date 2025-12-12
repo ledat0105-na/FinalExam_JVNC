@@ -123,15 +123,22 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
+    public List<ItemDTO> searchItems(String keyword, Long categoryId) {
+        return itemRepository.searchActiveItems(keyword, categoryId).stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Override
     public List<ItemDTO> importFromCSV(MultipartFile file) {
         List<ItemDTO> importedItems = new ArrayList<>();
         List<String> errors = new ArrayList<>();
 
         try (InputStreamReader reader = new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8);
-             CSVReader csvReader = new CSVReader(reader)) {
+                CSVReader csvReader = new CSVReader(reader)) {
 
             List<String[]> records = csvReader.readAll();
-            
+
             // Skip header row
             if (records.isEmpty()) {
                 throw new RuntimeException("CSV file is empty");
@@ -190,29 +197,29 @@ public class ItemServiceImpl implements ItemService {
     @Override
     public byte[] exportToCSV() {
         List<ItemDTO> items = getAllItems();
-        
+
         try (StringWriter writer = new StringWriter();
-             CSVWriter csvWriter = new CSVWriter(writer)) {
+                CSVWriter csvWriter = new CSVWriter(writer)) {
 
             // Write header
-            csvWriter.writeNext(new String[]{
-                "SKU", "Item Name", "Category ID", "Category Name", "Item Type", 
-                "Unit Name", "Unit Price", "Weight (Kg)", "Description", "Is Active"
+            csvWriter.writeNext(new String[] {
+                    "SKU", "Item Name", "Category ID", "Category Name", "Item Type",
+                    "Unit Name", "Unit Price", "Weight (Kg)", "Description", "Is Active"
             });
 
             // Write data
             for (ItemDTO item : items) {
-                csvWriter.writeNext(new String[]{
-                    item.getSku(),
-                    item.getItemName(),
-                    item.getCategoryId().toString(),
-                    item.getCategoryName(),
-                    item.getItemType(),
-                    item.getUnitName(),
-                    item.getUnitPrice().toString(),
-                    item.getWeightKg() != null ? item.getWeightKg().toString() : "",
-                    item.getDescription() != null ? item.getDescription() : "",
-                    item.getIsActive() != null ? item.getIsActive().toString() : "true"
+                csvWriter.writeNext(new String[] {
+                        item.getSku(),
+                        item.getItemName(),
+                        item.getCategoryId().toString(),
+                        item.getCategoryName(),
+                        item.getItemType(),
+                        item.getUnitName(),
+                        item.getUnitPrice().toString(),
+                        item.getWeightKg() != null ? item.getWeightKg().toString() : "",
+                        item.getDescription() != null ? item.getDescription() : "",
+                        item.getIsActive() != null ? item.getIsActive().toString() : "true"
                 });
             }
 
@@ -238,4 +245,3 @@ public class ItemServiceImpl implements ItemService {
                 .build();
     }
 }
-

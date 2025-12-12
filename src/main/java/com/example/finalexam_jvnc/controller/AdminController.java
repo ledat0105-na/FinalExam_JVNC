@@ -1,7 +1,7 @@
 package com.example.finalexam_jvnc.controller;
 
 import com.example.finalexam_jvnc.dto.*;
-import com.example.finalexam_jvnc.model.Refund;
+
 import com.example.finalexam_jvnc.repository.AccountRepository;
 import com.example.finalexam_jvnc.repository.RefundRepository;
 import com.example.finalexam_jvnc.service.*;
@@ -83,18 +83,19 @@ public class AdminController {
         if (adminUsername == null || !accountService.isAdmin(adminUsername)) {
             return "redirect:/login";
         }
-        
+
         // Get statistics for dashboard
         long totalUsers = 0;
         long pendingRefunds = 0;
         long todayAccess = 0;
-        
+        long lowStockAlerts = 0;
+
         try {
             totalUsers = accountRepository.count();
         } catch (Exception e) {
             totalUsers = 0;
         }
-        
+
         // Count pending refunds (PENDING or REQUESTED status)
         try {
             List<RefundDTO> pendingRefundsList = refundService.getRefundsByStatus("PENDING");
@@ -109,7 +110,7 @@ public class AdminController {
             // If there's an error, set to 0
             pendingRefunds = 0;
         }
-        
+
         // Count accounts that logged in today
         try {
             LocalDate today = LocalDate.now();
@@ -120,11 +121,37 @@ public class AdminController {
         } catch (Exception e) {
             todayAccess = 0;
         }
-        
+
+        // Count low stock alerts
+        try {
+            List<StockItemDTO> lowStockItems = stockItemService.getLowStockItems();
+            lowStockAlerts = lowStockItems != null ? lowStockItems.size() : 0;
+        } catch (Exception e) {
+            lowStockAlerts = 0;
+        }
+
+        // Get today's order/refund statistics
+        long totalOrdersToday = 0;
+        long totalRefundsToday = 0;
+        try {
+            java.time.LocalDate today = java.time.LocalDate.now();
+            com.example.finalexam_jvnc.dto.RevenueReportDTO todayReport = reportService.getRevenueReportByDay(today);
+            if (todayReport != null) {
+                totalOrdersToday = todayReport.getTotalOrders() != null ? todayReport.getTotalOrders() : 0L;
+                totalRefundsToday = todayReport.getTotalRefunds() != null ? todayReport.getTotalRefunds() : 0L;
+            }
+        } catch (Exception e) {
+            totalOrdersToday = 0;
+            totalRefundsToday = 0;
+        }
+
         model.addAttribute("adminUsername", adminUsername);
         model.addAttribute("totalUsers", totalUsers);
         model.addAttribute("pendingApprovals", pendingRefunds);
         model.addAttribute("todayAccess", todayAccess);
+        model.addAttribute("lowStockAlerts", lowStockAlerts);
+        model.addAttribute("totalOrdersToday", totalOrdersToday);
+        model.addAttribute("totalRefundsToday", totalRefundsToday);
         return "admin/dashboard-admin";
     }
 
@@ -156,12 +183,12 @@ public class AdminController {
     // Handle create account
     @PostMapping("/accounts/new")
     public String createAccount(@RequestParam String username,
-                               @RequestParam String email,
-                               @RequestParam String password,
-                               @RequestParam String confirmPassword,
-                               @RequestParam(required = false) List<String> roleCodes,
-                               HttpSession session,
-                               RedirectAttributes redirectAttributes) {
+            @RequestParam String email,
+            @RequestParam String password,
+            @RequestParam String confirmPassword,
+            @RequestParam(required = false) List<String> roleCodes,
+            HttpSession session,
+            RedirectAttributes redirectAttributes) {
         String adminUsername = (String) session.getAttribute("adminUsername");
         if (adminUsername == null || !accountService.isAdmin(adminUsername)) {
             return "redirect:/login";
@@ -200,9 +227,9 @@ public class AdminController {
 
     // View account details with audit log
     @GetMapping("/accounts/{id}")
-    public String viewAccountDetails(@PathVariable Long id, 
-                                    HttpSession session, 
-                                    Model model) {
+    public String viewAccountDetails(@PathVariable Long id,
+            HttpSession session,
+            Model model) {
         String adminUsername = (String) session.getAttribute("adminUsername");
         if (adminUsername == null || !accountService.isAdmin(adminUsername)) {
             return "redirect:/login";
@@ -215,27 +242,27 @@ public class AdminController {
 
     // Lock/Unlock account
     @PostMapping("/accounts/{id}/toggle-lock")
-    public String toggleAccountLock(@PathVariable Long id, 
-                                   HttpSession session, 
-                                   RedirectAttributes redirectAttributes) {
+    public String toggleAccountLock(@PathVariable Long id,
+            HttpSession session,
+            RedirectAttributes redirectAttributes) {
         String adminUsername = (String) session.getAttribute("adminUsername");
         if (adminUsername == null || !accountService.isAdmin(adminUsername)) {
             return "redirect:/login";
         }
 
         AccountDTO account = adminService.toggleAccountLock(id);
-        String message = Boolean.TRUE.equals(account.getIsLocked()) 
-            ? "Account locked successfully" 
-            : "Account unlocked successfully";
+        String message = Boolean.TRUE.equals(account.getIsLocked())
+                ? "Account locked successfully"
+                : "Account unlocked successfully";
         redirectAttributes.addFlashAttribute("success", message);
         return "redirect:/admin/accounts";
     }
 
     // Assign roles
     @GetMapping("/accounts/{id}/roles")
-    public String showRoleAssignmentPage(@PathVariable Long id, 
-                                        HttpSession session, 
-                                        Model model) {
+    public String showRoleAssignmentPage(@PathVariable Long id,
+            HttpSession session,
+            Model model) {
         String adminUsername = (String) session.getAttribute("adminUsername");
         if (adminUsername == null || !accountService.isAdmin(adminUsername)) {
             return "redirect:/login";
@@ -248,10 +275,10 @@ public class AdminController {
     }
 
     @PostMapping("/accounts/{id}/roles")
-    public String assignRoles(@PathVariable Long id, 
-                             @RequestParam("roleCodes") List<String> roleCodes,
-                             HttpSession session, 
-                             RedirectAttributes redirectAttributes) {
+    public String assignRoles(@PathVariable Long id,
+            @RequestParam("roleCodes") List<String> roleCodes,
+            HttpSession session,
+            RedirectAttributes redirectAttributes) {
         String adminUsername = (String) session.getAttribute("adminUsername");
         if (adminUsername == null || !accountService.isAdmin(adminUsername)) {
             return "redirect:/login";
@@ -276,7 +303,7 @@ public class AdminController {
     }
 
     // ========== CATEGORY MANAGEMENT ==========
-    
+
     @GetMapping("/categories")
     public String listCategories(HttpSession session, Model model) {
         String adminUsername = (String) session.getAttribute("adminUsername");
@@ -312,9 +339,9 @@ public class AdminController {
     }
 
     @PostMapping("/categories")
-    public String saveCategory(@ModelAttribute CategoryDTO categoryDTO, 
-                              HttpSession session, 
-                              RedirectAttributes redirectAttributes) {
+    public String saveCategory(@ModelAttribute CategoryDTO categoryDTO,
+            HttpSession session,
+            RedirectAttributes redirectAttributes) {
         String adminUsername = (String) session.getAttribute("adminUsername");
         if (adminUsername == null || !accountService.isAdmin(adminUsername)) {
             return "redirect:/login";
@@ -335,9 +362,9 @@ public class AdminController {
     }
 
     @PostMapping("/categories/{id}/delete")
-    public String deleteCategory(@PathVariable Long id, 
-                                HttpSession session, 
-                                RedirectAttributes redirectAttributes) {
+    public String deleteCategory(@PathVariable Long id,
+            HttpSession session,
+            RedirectAttributes redirectAttributes) {
         String adminUsername = (String) session.getAttribute("adminUsername");
         if (adminUsername == null || !accountService.isAdmin(adminUsername)) {
             return "redirect:/login";
@@ -388,9 +415,9 @@ public class AdminController {
     }
 
     @PostMapping("/items")
-    public String saveItem(@ModelAttribute ItemDTO itemDTO, 
-                          HttpSession session, 
-                          RedirectAttributes redirectAttributes) {
+    public String saveItem(@ModelAttribute ItemDTO itemDTO,
+            HttpSession session,
+            RedirectAttributes redirectAttributes) {
         String adminUsername = (String) session.getAttribute("adminUsername");
         if (adminUsername == null || !accountService.isAdmin(adminUsername)) {
             return "redirect:/login";
@@ -405,15 +432,16 @@ public class AdminController {
             }
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error", e.getMessage());
-            return itemDTO.getItemId() == null ? "redirect:/admin/items/new" : "redirect:/admin/items/" + itemDTO.getItemId() + "/edit";
+            return itemDTO.getItemId() == null ? "redirect:/admin/items/new"
+                    : "redirect:/admin/items/" + itemDTO.getItemId() + "/edit";
         }
         return "redirect:/admin/items";
     }
 
     @PostMapping("/items/{id}/delete")
-    public String deleteItem(@PathVariable Long id, 
-                            HttpSession session, 
-                            RedirectAttributes redirectAttributes) {
+    public String deleteItem(@PathVariable Long id,
+            HttpSession session,
+            RedirectAttributes redirectAttributes) {
         String adminUsername = (String) session.getAttribute("adminUsername");
         if (adminUsername == null || !accountService.isAdmin(adminUsername)) {
             return "redirect:/login";
@@ -437,17 +465,17 @@ public class AdminController {
     }
 
     @PostMapping("/items/import")
-    public String importItems(@RequestParam("file") MultipartFile file, 
-                             HttpSession session, 
-                             RedirectAttributes redirectAttributes) {
+    public String importItems(@RequestParam("file") MultipartFile file,
+            HttpSession session,
+            RedirectAttributes redirectAttributes) {
         String adminUsername = (String) session.getAttribute("adminUsername");
         if (adminUsername == null || !accountService.isAdmin(adminUsername)) {
             return "redirect:/login";
         }
         try {
             List<ItemDTO> importedItems = itemService.importFromCSV(file);
-            redirectAttributes.addFlashAttribute("success", 
-                "Successfully imported " + importedItems.size() + " items");
+            redirectAttributes.addFlashAttribute("success",
+                    "Successfully imported " + importedItems.size() + " items");
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error", "Import failed: " + e.getMessage());
         }
@@ -504,9 +532,9 @@ public class AdminController {
     }
 
     @PostMapping("/warehouses")
-    public String saveWarehouse(@ModelAttribute WarehouseDTO warehouseDTO, 
-                               HttpSession session, 
-                               RedirectAttributes redirectAttributes) {
+    public String saveWarehouse(@ModelAttribute WarehouseDTO warehouseDTO,
+            HttpSession session,
+            RedirectAttributes redirectAttributes) {
         String adminUsername = (String) session.getAttribute("adminUsername");
         if (adminUsername == null || !accountService.isAdmin(adminUsername)) {
             return "redirect:/login";
@@ -521,15 +549,16 @@ public class AdminController {
             }
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error", e.getMessage());
-            return warehouseDTO.getWarehouseId() == null ? "redirect:/admin/warehouses/new" : "redirect:/admin/warehouses/" + warehouseDTO.getWarehouseId() + "/edit";
+            return warehouseDTO.getWarehouseId() == null ? "redirect:/admin/warehouses/new"
+                    : "redirect:/admin/warehouses/" + warehouseDTO.getWarehouseId() + "/edit";
         }
         return "redirect:/admin/warehouses";
     }
 
     @PostMapping("/warehouses/{id}/delete")
-    public String deleteWarehouse(@PathVariable Long id, 
-                                 HttpSession session, 
-                                 RedirectAttributes redirectAttributes) {
+    public String deleteWarehouse(@PathVariable Long id,
+            HttpSession session,
+            RedirectAttributes redirectAttributes) {
         String adminUsername = (String) session.getAttribute("adminUsername");
         if (adminUsername == null || !accountService.isAdmin(adminUsername)) {
             return "redirect:/login";
@@ -547,15 +576,15 @@ public class AdminController {
 
     @GetMapping("/refunds")
     public String listRefunds(HttpSession session,
-                              Model model,
-                              @RequestParam(required = false) String status) {
+            Model model,
+            @RequestParam(required = false) String status) {
         String adminUsername = (String) session.getAttribute("adminUsername");
         if (adminUsername == null || !accountService.isAdmin(adminUsername)) {
             return "redirect:/login";
         }
 
         List<com.example.finalexam_jvnc.dto.RefundDTO> refunds;
-        
+
         // Filter by status if provided
         if (status != null && !status.isEmpty()) {
             refunds = refundService.getRefundsByStatus(status);
@@ -571,9 +600,9 @@ public class AdminController {
 
     @PostMapping("/refunds/{id}/update-status")
     public String updateRefundStatus(@PathVariable Long id,
-                                    @RequestParam String status,
-                                    HttpSession session,
-                                    RedirectAttributes redirectAttributes) {
+            @RequestParam String status,
+            HttpSession session,
+            RedirectAttributes redirectAttributes) {
         String adminUsername = (String) session.getAttribute("adminUsername");
         if (adminUsername == null || !accountService.isAdmin(adminUsername)) {
             return "redirect:/login";
@@ -582,11 +611,11 @@ public class AdminController {
         try {
             refundService.updateRefundStatus(id, status);
             String statusName = getRefundStatusName(status);
-            redirectAttributes.addFlashAttribute("success", 
-                "Cập nhật trạng thái hoàn tiền thành công! Trạng thái mới: " + statusName);
+            redirectAttributes.addFlashAttribute("success",
+                    "Cập nhật trạng thái hoàn tiền thành công! Trạng thái mới: " + statusName);
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("error", 
-                "Lỗi khi cập nhật trạng thái: " + e.getMessage());
+            redirectAttributes.addFlashAttribute("error",
+                    "Lỗi khi cập nhật trạng thái: " + e.getMessage());
         }
 
         return "redirect:/admin/refunds";
@@ -622,9 +651,9 @@ public class AdminController {
 
     @PostMapping("/system-config/{key}/update")
     public String updateSystemConfig(@PathVariable String key,
-                                    @RequestParam String value,
-                                    HttpSession session,
-                                    RedirectAttributes redirectAttributes) {
+            @RequestParam String value,
+            HttpSession session,
+            RedirectAttributes redirectAttributes) {
         String adminUsername = (String) session.getAttribute("adminUsername");
         if (adminUsername == null || !accountService.isAdmin(adminUsername)) {
             return "redirect:/login";
@@ -632,11 +661,11 @@ public class AdminController {
 
         try {
             systemConfigService.updateConfig(key, value);
-            redirectAttributes.addFlashAttribute("success", 
-                "Cập nhật cấu hình hệ thống thành công!");
+            redirectAttributes.addFlashAttribute("success",
+                    "Cập nhật cấu hình hệ thống thành công!");
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("error", 
-                "Lỗi khi cập nhật cấu hình: " + e.getMessage());
+            redirectAttributes.addFlashAttribute("error",
+                    "Lỗi khi cập nhật cấu hình: " + e.getMessage());
         }
 
         return "redirect:/admin/system-config";
@@ -656,8 +685,8 @@ public class AdminController {
 
     @PostMapping("/system-config")
     public String createSystemConfig(@ModelAttribute SystemConfigDTO configDTO,
-                                    HttpSession session,
-                                    RedirectAttributes redirectAttributes) {
+            HttpSession session,
+            RedirectAttributes redirectAttributes) {
         String adminUsername = (String) session.getAttribute("adminUsername");
         if (adminUsername == null || !accountService.isAdmin(adminUsername)) {
             return "redirect:/login";
@@ -665,11 +694,11 @@ public class AdminController {
 
         try {
             systemConfigService.createOrUpdateConfig(configDTO);
-            redirectAttributes.addFlashAttribute("success", 
-                "Tạo cấu hình hệ thống thành công!");
+            redirectAttributes.addFlashAttribute("success",
+                    "Tạo cấu hình hệ thống thành công!");
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("error", 
-                "Lỗi khi tạo cấu hình: " + e.getMessage());
+            redirectAttributes.addFlashAttribute("error",
+                    "Lỗi khi tạo cấu hình: " + e.getMessage());
             return "redirect:/admin/system-config/new";
         }
 
@@ -678,8 +707,8 @@ public class AdminController {
 
     @PostMapping("/system-config/{key}/delete")
     public String deleteSystemConfig(@PathVariable String key,
-                                    HttpSession session,
-                                    RedirectAttributes redirectAttributes) {
+            HttpSession session,
+            RedirectAttributes redirectAttributes) {
         String adminUsername = (String) session.getAttribute("adminUsername");
         if (adminUsername == null || !accountService.isAdmin(adminUsername)) {
             return "redirect:/login";
@@ -687,11 +716,11 @@ public class AdminController {
 
         try {
             systemConfigService.deleteConfig(key);
-            redirectAttributes.addFlashAttribute("success", 
-                "Xóa cấu hình hệ thống thành công!");
+            redirectAttributes.addFlashAttribute("success",
+                    "Xóa cấu hình hệ thống thành công!");
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("error", 
-                "Lỗi khi xóa cấu hình: " + e.getMessage());
+            redirectAttributes.addFlashAttribute("error",
+                    "Lỗi khi xóa cấu hình: " + e.getMessage());
         }
 
         return "redirect:/admin/system-config";
@@ -699,8 +728,8 @@ public class AdminController {
 
     @PostMapping("/system-config/{key}/toggle-active")
     public String toggleSystemConfigActive(@PathVariable String key,
-                                         HttpSession session,
-                                         RedirectAttributes redirectAttributes) {
+            HttpSession session,
+            RedirectAttributes redirectAttributes) {
         String adminUsername = (String) session.getAttribute("adminUsername");
         if (adminUsername == null || !accountService.isAdmin(adminUsername)) {
             return "redirect:/login";
@@ -709,14 +738,366 @@ public class AdminController {
         try {
             SystemConfigDTO config = systemConfigService.toggleActive(key);
             String status = config.getIsActive() ? "kích hoạt" : "vô hiệu hóa";
-            redirectAttributes.addFlashAttribute("success", 
-                "Đã " + status + " cấu hình hệ thống thành công!");
+            redirectAttributes.addFlashAttribute("success",
+                    "Đã " + status + " cấu hình hệ thống thành công!");
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("error", 
-                "Lỗi khi cập nhật trạng thái: " + e.getMessage());
+            redirectAttributes.addFlashAttribute("error",
+                    "Lỗi khi cập nhật trạng thái: " + e.getMessage());
         }
 
         return "redirect:/admin/system-config";
     }
-}
 
+    // ========== STOCK MANAGEMENT ==========
+
+    @GetMapping("/stock/low-stock")
+    public String viewLowStockAlerts(HttpSession session, Model model) {
+        String adminUsername = (String) session.getAttribute("adminUsername");
+        if (adminUsername == null || !accountService.isAdmin(adminUsername)) {
+            return "redirect:/login";
+        }
+
+        List<StockItemDTO> lowStockItems = stockItemService.getLowStockItems();
+        model.addAttribute("lowStockItems", lowStockItems);
+        model.addAttribute("adminUsername", adminUsername);
+        return "admin/stock-low-stock";
+    }
+
+    // ========== ORDER MANAGEMENT ==========
+
+    @GetMapping("/orders")
+    public String listOrders(HttpSession session,
+            Model model,
+            @RequestParam(required = false) String status) {
+        String adminUsername = (String) session.getAttribute("adminUsername");
+        if (adminUsername == null || !accountService.isAdmin(adminUsername)) {
+            return "redirect:/login";
+        }
+
+        List<OrderDTO> orders;
+
+        // Filter by status if provided
+        if (status != null && !status.isEmpty()) {
+            orders = orderService.getOrdersByStatus(status);
+        } else {
+            orders = orderService.getAllOrders();
+        }
+
+        // Define available statuses
+        List<String> availableStatuses = List.of(
+                "PENDING_CONFIRMATION", "PROCESSING", "SHIPPED", "DELIVERED", "DONE", "CANCELLED");
+
+        model.addAttribute("orders", orders);
+        model.addAttribute("availableStatuses", availableStatuses);
+        model.addAttribute("selectedStatus", status);
+        model.addAttribute("adminUsername", adminUsername);
+        return "admin/orders-list";
+    }
+
+    @PostMapping("/orders/{id}/update-status")
+    public String updateOrderStatus(@PathVariable Long id,
+            @RequestParam String status,
+            HttpSession session,
+            RedirectAttributes redirectAttributes) {
+        String adminUsername = (String) session.getAttribute("adminUsername");
+        if (adminUsername == null || !accountService.isAdmin(adminUsername)) {
+            return "redirect:/login";
+        }
+
+        try {
+            orderService.updateOrderStatus(id, status);
+            String statusName = getOrderStatusName(status);
+            redirectAttributes.addFlashAttribute("success",
+                    "Cập nhật trạng thái đơn hàng thành công! Trạng thái mới: " + statusName);
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error",
+                    "Lỗi khi cập nhật trạng thái: " + e.getMessage());
+        }
+
+        return "redirect:/admin/orders";
+    }
+
+    private String getOrderStatusName(String status) {
+        return switch (status) {
+            case "PENDING" -> "Chờ xử lý";
+            case "PROCESSING" -> "Đang xử lý";
+            case "SHIPPED" -> "Đã gửi hàng";
+            case "DELIVERED" -> "Đã giao hàng";
+            case "DONE" -> "Hoàn thành";
+            case "CANCELLED" -> "Đã hủy";
+            default -> status;
+        };
+    }
+
+    // ========== SHIPMENT MANAGEMENT ==========
+
+    @GetMapping("/shipments")
+    public String listShipments(HttpSession session,
+            Model model,
+            @RequestParam(required = false) String status) {
+        String adminUsername = (String) session.getAttribute("adminUsername");
+        if (adminUsername == null || !accountService.isAdmin(adminUsername)) {
+            return "redirect:/login";
+        }
+
+        List<ShipmentDTO> shipments;
+
+        // Filter by status if provided
+        if (status != null && !status.isEmpty()) {
+            shipments = shipmentService.getShipmentsByStatus(status);
+        } else {
+            shipments = shipmentService.getAllShipments();
+        }
+
+        // Define available statuses
+        List<String> availableStatuses = List.of(
+                "PENDING", "SHIPPED", "IN_TRANSIT", "DELIVERED", "CANCELLED");
+
+        model.addAttribute("shipments", shipments);
+        model.addAttribute("availableStatuses", availableStatuses);
+        model.addAttribute("selectedStatus", status);
+        model.addAttribute("adminUsername", adminUsername);
+        return "admin/shipments-list";
+    }
+
+    // ========== FEES CONFIGURATION ==========
+
+    @GetMapping("/fees")
+    public String showFeesConfig(HttpSession session, Model model) {
+        String adminUsername = (String) session.getAttribute("adminUsername");
+        if (adminUsername == null || !accountService.isAdmin(adminUsername)) {
+            return "redirect:/login";
+        }
+
+        // Get current fee values or default to 0
+        Double shippingFee = systemConfigService.getShippingFee();
+        Double taxRate = systemConfigService.getTaxRate();
+        Double codFee = systemConfigService.getCodFee();
+        Double gatewayFee = systemConfigService.getGatewayFee();
+
+        model.addAttribute("shippingFee", shippingFee != null ? shippingFee : 0.0);
+        model.addAttribute("taxRate", taxRate != null ? taxRate : 0.0);
+        model.addAttribute("codFee", codFee != null ? codFee : 0.0);
+        model.addAttribute("gatewayFee", gatewayFee != null ? gatewayFee : 0.0);
+        model.addAttribute("adminUsername", adminUsername);
+        return "admin/fees-config";
+    }
+
+    @PostMapping("/fees")
+    public String updateFeesConfig(@RequestParam(required = false) Double shippingFee,
+            @RequestParam(required = false) Double taxRate,
+            @RequestParam(required = false) Double codFee,
+            @RequestParam(required = false) Double gatewayFee,
+            HttpSession session,
+            RedirectAttributes redirectAttributes) {
+        String adminUsername = (String) session.getAttribute("adminUsername");
+        if (adminUsername == null || !accountService.isAdmin(adminUsername)) {
+            return "redirect:/login";
+        }
+
+        try {
+            // Update or create each fee configuration
+            if (shippingFee != null) {
+                SystemConfigDTO config = new SystemConfigDTO();
+                config.setConfigKey("SHIPPING_FEE");
+                config.setConfigName("Phí vận chuyển");
+                config.setConfigValue(String.valueOf(shippingFee));
+                config.setDescription("Phí vận chuyển hàng hóa (VNĐ)");
+                config.setIsActive(true);
+                systemConfigService.createOrUpdateConfig(config);
+            }
+
+            if (taxRate != null) {
+                SystemConfigDTO config = new SystemConfigDTO();
+                config.setConfigKey("TAX_RATE");
+                config.setConfigName("Tỷ lệ thuế");
+                config.setConfigValue(String.valueOf(taxRate));
+                config.setDescription("Tỷ lệ thuế VAT (số thập phân, VD: 0.1 = 10%)");
+                config.setIsActive(true);
+                systemConfigService.createOrUpdateConfig(config);
+            }
+
+            if (codFee != null) {
+                SystemConfigDTO config = new SystemConfigDTO();
+                config.setConfigKey("COD_FEE");
+                config.setConfigName("Phí thu hộ COD");
+                config.setConfigValue(String.valueOf(codFee));
+                config.setDescription("Phí thu hộ COD (VNĐ)");
+                config.setIsActive(true);
+                systemConfigService.createOrUpdateConfig(config);
+            }
+
+            if (gatewayFee != null) {
+                SystemConfigDTO config = new SystemConfigDTO();
+                config.setConfigKey("GATEWAY_FEE");
+                config.setConfigName("Phí cổng thanh toán");
+                config.setConfigValue(String.valueOf(gatewayFee));
+                config.setDescription("Phí cổng thanh toán (VNĐ hoặc %)");
+                config.setIsActive(true);
+                systemConfigService.createOrUpdateConfig(config);
+            }
+
+            redirectAttributes.addFlashAttribute("success",
+                    "Cập nhật cấu hình phí hệ thống thành công!");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error",
+                    "Lỗi khi cập nhật cấu hình: " + e.getMessage());
+        }
+
+        return "redirect:/admin/fees";
+    }
+
+    // ========== PROMOTION MANAGEMENT ==========
+
+    @GetMapping("/promotions")
+    public String listPromotions(HttpSession session, Model model) {
+        String adminUsername = (String) session.getAttribute("adminUsername");
+        if (adminUsername == null || !accountService.isAdmin(adminUsername)) {
+            return "redirect:/login";
+        }
+
+        List<PromotionDTO> promotions = promotionService.getAllPromotions();
+        model.addAttribute("promotions", promotions);
+        model.addAttribute("adminUsername", adminUsername);
+        return "admin/promotions-list";
+    }
+
+    @GetMapping("/promotions/new")
+    public String showCreatePromotionForm(HttpSession session, Model model) {
+        String adminUsername = (String) session.getAttribute("adminUsername");
+        if (adminUsername == null || !accountService.isAdmin(adminUsername)) {
+            return "redirect:/login";
+        }
+
+        model.addAttribute("promotion", new PromotionDTO());
+        model.addAttribute("adminUsername", adminUsername);
+        return "admin/promotion-form";
+    }
+
+    @GetMapping("/promotions/{id}/edit")
+    public String showEditPromotionForm(@PathVariable Long id, HttpSession session, Model model) {
+        String adminUsername = (String) session.getAttribute("adminUsername");
+        if (adminUsername == null || !accountService.isAdmin(adminUsername)) {
+            return "redirect:/login";
+        }
+
+        PromotionDTO promotion = promotionService.getPromotionById(id);
+        model.addAttribute("promotion", promotion);
+        model.addAttribute("adminUsername", adminUsername);
+        return "admin/promotion-form";
+    }
+
+    @PostMapping("/promotions")
+    public String savePromotion(@ModelAttribute PromotionDTO promotionDTO,
+            HttpSession session,
+            RedirectAttributes redirectAttributes) {
+        String adminUsername = (String) session.getAttribute("adminUsername");
+        if (adminUsername == null || !accountService.isAdmin(adminUsername)) {
+            return "redirect:/login";
+        }
+
+        try {
+            if (promotionDTO.getPromotionId() == null) {
+                promotionService.createPromotion(promotionDTO);
+                redirectAttributes.addFlashAttribute("success", "Mã khuyến mãi đã được tạo thành công!");
+            } else {
+                promotionService.updatePromotion(promotionDTO.getPromotionId(), promotionDTO);
+                redirectAttributes.addFlashAttribute("success", "Mã khuyến mãi đã được cập nhật thành công!");
+            }
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Lỗi: " + e.getMessage());
+            return promotionDTO.getPromotionId() == null ? "redirect:/admin/promotions/new"
+                    : "redirect:/admin/promotions/" + promotionDTO.getPromotionId() + "/edit";
+        }
+
+        return "redirect:/admin/promotions";
+    }
+
+    @PostMapping("/promotions/{id}/delete")
+    public String deletePromotion(@PathVariable Long id,
+            HttpSession session,
+            RedirectAttributes redirectAttributes) {
+        String adminUsername = (String) session.getAttribute("adminUsername");
+        if (adminUsername == null || !accountService.isAdmin(adminUsername)) {
+            return "redirect:/login";
+        }
+
+        try {
+            promotionService.deletePromotion(id);
+            redirectAttributes.addFlashAttribute("success", "Mã khuyến mãi đã được xóa thành công!");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Lỗi khi xóa: " + e.getMessage());
+        }
+
+        return "redirect:/admin/promotions";
+    }
+
+    @GetMapping("/promotion-usages")
+    public String listPromotionUsages(HttpSession session, Model model) {
+        String adminUsername = (String) session.getAttribute("adminUsername");
+        if (adminUsername == null || !accountService.isAdmin(adminUsername)) {
+            return "redirect:/login";
+        }
+        var usages = promotionUsageService.getAllPromotionUsages();
+        model.addAttribute("usages", usages);
+        model.addAttribute("adminUsername", adminUsername);
+        return "admin/promotion-usage-list";
+    }
+
+    @GetMapping("/revenue-report")
+    public String revenueReport(@RequestParam(value = "mode", required = false, defaultValue = "day") String mode,
+            @RequestParam(value = "day", required = false) String day,
+            @RequestParam(value = "month", required = false) Integer month,
+            @RequestParam(value = "year", required = false) Integer year,
+            @RequestParam(value = "startDate", required = false) String startDate,
+            @RequestParam(value = "endDate", required = false) String endDate,
+            HttpSession session, Model model) {
+        String adminUsername = (String) session.getAttribute("adminUsername");
+        if (adminUsername == null || !accountService.isAdmin(adminUsername)) {
+            return "redirect:/login";
+        }
+        var now = java.time.LocalDate.now();
+        com.example.finalexam_jvnc.dto.RevenueReportDTO report = null;
+        if ("day".equals(mode)) {
+            java.time.LocalDate targetDay = (day != null && !day.isEmpty()) ? java.time.LocalDate.parse(day) : now;
+            report = reportService.getRevenueReportByDay(targetDay);
+            model.addAttribute("day", targetDay);
+        } else if ("month".equals(mode)) {
+            int m = (month != null) ? month : now.getMonthValue();
+            int y = (year != null) ? year : now.getYear();
+            report = reportService.getRevenueReportByMonth(y, m);
+            model.addAttribute("month", m);
+            model.addAttribute("year", y);
+        } else if ("range".equals(mode)) {
+            java.time.LocalDate start = (startDate != null && !startDate.isEmpty())
+                    ? java.time.LocalDate.parse(startDate)
+                    : now.withDayOfMonth(1);
+            java.time.LocalDate end = (endDate != null && !endDate.isEmpty()) ? java.time.LocalDate.parse(endDate)
+                    : now;
+            report = reportService.getOrderStatistics(start, end);
+            model.addAttribute("startDate", start);
+            model.addAttribute("endDate", end);
+        } else {
+            return "redirect:/admin/revenue-report?mode=day";
+        }
+        model.addAttribute("mode", mode);
+        model.addAttribute("report", report);
+        model.addAttribute("adminUsername", adminUsername);
+        return "admin/revenue-report";
+    }
+
+    @GetMapping("/best-selling")
+    public String bestSelling(@RequestParam(value = "limit", required = false, defaultValue = "10") int limit,
+            HttpSession session, Model model) {
+        String adminUsername = (String) session.getAttribute("adminUsername");
+        if (adminUsername == null || !accountService.isAdmin(adminUsername)) {
+            return "redirect:/login";
+        }
+
+        var items = reportService.getBestSellingItems(limit);
+        model.addAttribute("items", items);
+        model.addAttribute("limit", limit);
+        model.addAttribute("adminUsername", adminUsername);
+        return "admin/best-selling";
+    }
+}

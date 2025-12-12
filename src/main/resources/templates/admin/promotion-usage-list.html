@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lịch sử sử dụng mã khuyến mãi | UCOP</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link th:href="@{/css/style.css}" rel="stylesheet">
+</head>
+<body class="admin-page">
+    <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+<div class="container mt-4 mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1"><i class="bi bi-clock-history me-2"></i>Lịch sử sử dụng mã khuyến mãi</h2>
+            <p class="mb-0 opacity-75">Xem lại các lần khách hàng nhập mã giảm giá trên hệ thống.</p>
+        </div>
+        <div>
+            <a href="/admin/promotions" class="btn btn-outline-primary"><i class="bi bi-ticket-perforated me-2"></i>Danh sách mã khuyến mãi</a>
+            <a href="/admin/dashboard" class="btn btn-light ms-1"><i class="bi bi-arrow-left me-2"></i>Dashboard</a>
+        </div>
+    </div>
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>#</th>
+                            <th>Mã khuyến mãi</th>
+                            <th>Người dùng</th>
+                            <th>Đơn hàng</th>
+                            <th>Giá trị giảm</th>
+                            <th>Thời gian</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="u, stat : ${usages}">
+                            <td th:text="${stat.count + 1}"></td>
+                            <td th:text="${u.promotionCode}" class="fw-bold text-primary"></td>
+                            <td th:text="${u.accountUsername}"></td>
+                            <td><a th:href="@{/admin/orders}" th:text="${u.orderNumber}"></a></td>
+                            <td th:text="${#numbers.formatDecimal(u.discountAmount, 0, 'COMMA', 0, 'POINT')} + ' đ'" class="text-success fw-bold"></td>
+                            <td th:text="${#temporals.format(u.usedAt, 'dd/MM/yyyy HH:mm')}"></td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(usages)}">
+                            <td colspan="6" class="text-center text-muted py-4">
+                                <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                                Không có dữ liệu sử dụng mã giảm giá nào!
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
