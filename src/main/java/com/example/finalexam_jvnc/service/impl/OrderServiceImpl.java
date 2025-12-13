@@ -39,6 +39,9 @@ public class OrderServiceImpl implements OrderService {
         @Autowired
         private RefundRepository refundRepository;
 
+        @Autowired
+        private com.example.finalexam_jvnc.service.StockItemService stockItemService;
+
         // ...
 
         @Override
@@ -120,6 +123,11 @@ public class OrderServiceImpl implements OrderService {
                                 discountTotal = subtotal;
                 }
 
+                // Check and Reserve Stock
+                for (CartItem item : cartItems) {
+                        stockItemService.reserveStock(item.getItem().getItemId(), item.getQuantity());
+                }
+
                 // Simple fee logic (can be expanded)
                 double shippingFee = 0.0;
                 double taxAmount = 0.0;
@@ -195,6 +203,28 @@ public class OrderServiceImpl implements OrderService {
         public void updateOrderStatus(Long orderId, String status) {
                 Order order = orderRepository.findById(orderId)
                                 .orElseThrow(() -> new RuntimeException("Order not found"));
+
+                String oldStatus = order.getStatus();
+
+                // Inventory Logic: Handle transitions
+                // 1. If moving to SHIPPED/DELIVERED from a non-complete state, deduct stock
+                // permanently (move from Reserved to Gone)
+                if (("SHIPPED".equals(status) || "DELIVERED".equals(status) || "On Delivery".equals(status))
+                                && !oldStatus.equals("SHIPPED") && !oldStatus.equals("DELIVERED")
+                                && !oldStatus.equals("On Delivery")) {
+                        List<OrderItem> items = orderItemRepository.findByOrderOrderId(orderId);
+                        for (OrderItem item : items) {
+                                try {
+                                        stockItemService.deductStock(item.getItem().getItemId(), item.getQuantity());
+                                } catch (Exception e) {
+                                        // Log error, but what to do? Maybe stock was already messed up.
+                                        // Ensure we don't block status update? Or do we?
+                                        // For now, throw to prevent "fake" shipping if stock is missing
+                                        throw new RuntimeException("Inventory Error: " + e.getMessage());
+                                }
+                        }
+                }
+
                 order.setStatus(status);
                 orderRepository.save(order);
         }
@@ -253,8 +283,32 @@ public class OrderServiceImpl implements OrderService {
                                         "Order cannot be canceled because it is not in PENDING_CONFIRMATION status");
                 }
 
+                // 1. Update status to CANCELLED
                 order.setStatus("CANCELLED");
                 orderRepository.save(order);
+
+                // 2. Handle Auto-Refund Logic (Only for WALLET)
+                if ("WALLET".equals(order.getPaymentMethod())) {
+                        // Do NOT refund immediately. Create a REQUESTED refund for Staff/Admin
+                        // approval.
+
+                        // Create Refund Record (REQUESTED)
+                        Refund refund = Refund.builder()
+                                        .order(order)
+                                        .refundAmount(order.getGrandTotal())
+                                        .status("REQUESTED") // Wait for approval
+                                        .requestedAt(java.time.LocalDateTime.now())
+                                        .reason("Auto-request for Cancelled Order (Wallet)")
+                                        .build();
+                        refundRepository.save(refund);
+                }
+                // For BANK_TRANSFER and COD: Just cancel, no auto-refund request.
+
+                // 3. Release Stock
+                List<OrderItem> items = orderItemRepository.findByOrderOrderId(orderId);
+                for (OrderItem item : items) {
+                        stockItemService.releaseStock(item.getItem().getItemId(), item.getQuantity());
+                }
         }
 
         @Override
@@ -266,16 +320,11 @@ public class OrderServiceImpl implements OrderService {
                         throw new RuntimeException("You are not authorized to request a refund for this order");
                 }
 
-                // 2. Only allow refund for cancelled or failed orders
-                if (!"CANCELLED".equals(order.getStatus()) && !"FAILED".equals(order.getStatus())) {
-                        throw new RuntimeException("Refund can only be requested for cancelled or failed orders");
-                }
-
-                // Prevent refund request for COD (Cash On Delivery) as no payment was made
-                // upfront
-                if ("COD".equals(order.getPaymentMethod())) {
+                // 2. Allow refund request ONLY for completed orders (Returns)
+                // User requirement: "Only when received and error can they send refund request"
+                if (!"DONE".equals(order.getStatus())) {
                         throw new RuntimeException(
-                                        "Refunds are not applicable for Cash On Delivery (COD) orders as no upfront payment was made.");
+                                        "Refund/Return request is only available for completed (received) orders.");
                 }
 
                 // Check if a refund already exists for this order
@@ -283,27 +332,14 @@ public class OrderServiceImpl implements OrderService {
                         throw new RuntimeException("Refund request already submitted for this order");
                 }
 
-                // 3. Create refund entry with PENDING status
+                // 3. Create refund entry with REQUESTED status (For Staff Review)
                 Refund refund = Refund.builder()
                                 .order(order)
                                 .refundAmount(order.getGrandTotal())
-                                .status("PENDING")
+                                .status("REQUESTED")
                                 .requestedAt(java.time.LocalDateTime.now())
-                                .reason("Customer requested refund")
+                                .reason("Item Defective/Error (Customer Request After Receipt)")
                                 .build();
                 refundRepository.save(refund);
-
-                // 4. If payment was via wallet, credit immediately
-                if ("WALLET".equals(order.getPaymentMethod())) {
-                        Wallet wallet = walletRepository.findByAccount_Username(username)
-                                        .orElseThrow(() -> new RuntimeException("Wallet not found"));
-                        wallet.setBalance(wallet.getBalance() + order.getGrandTotal());
-                        walletRepository.save(wallet);
-
-                        // Update refund status to APPROVED
-                        refund.setStatus("APPROVED");
-                        refund.setCompletedAt(java.time.LocalDateTime.now());
-                        refundRepository.save(refund);
-                }
         }
 }

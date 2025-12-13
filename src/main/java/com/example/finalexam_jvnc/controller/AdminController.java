@@ -1,7 +1,7 @@
 package com.example.finalexam_jvnc.controller;
 
 import com.example.finalexam_jvnc.dto.*;
-
+import com.example.finalexam_jvnc.model.Refund;
 import com.example.finalexam_jvnc.repository.AccountRepository;
 import com.example.finalexam_jvnc.repository.RefundRepository;
 import com.example.finalexam_jvnc.service.*;
@@ -130,28 +130,11 @@ public class AdminController {
             lowStockAlerts = 0;
         }
 
-        // Get today's order/refund statistics
-        long totalOrdersToday = 0;
-        long totalRefundsToday = 0;
-        try {
-            java.time.LocalDate today = java.time.LocalDate.now();
-            com.example.finalexam_jvnc.dto.RevenueReportDTO todayReport = reportService.getRevenueReportByDay(today);
-            if (todayReport != null) {
-                totalOrdersToday = todayReport.getTotalOrders() != null ? todayReport.getTotalOrders() : 0L;
-                totalRefundsToday = todayReport.getTotalRefunds() != null ? todayReport.getTotalRefunds() : 0L;
-            }
-        } catch (Exception e) {
-            totalOrdersToday = 0;
-            totalRefundsToday = 0;
-        }
-
         model.addAttribute("adminUsername", adminUsername);
         model.addAttribute("totalUsers", totalUsers);
         model.addAttribute("pendingApprovals", pendingRefunds);
         model.addAttribute("todayAccess", todayAccess);
         model.addAttribute("lowStockAlerts", lowStockAlerts);
-        model.addAttribute("totalOrdersToday", totalOrdersToday);
-        model.addAttribute("totalRefundsToday", totalRefundsToday);
         return "admin/dashboard-admin";
     }
 
@@ -414,8 +397,14 @@ public class AdminController {
         return "admin/item-form";
     }
 
+    @Autowired
+    private FileStorageService fileStorageService;
+
+    // ... (existing injections)
+
     @PostMapping("/items")
     public String saveItem(@ModelAttribute ItemDTO itemDTO,
+            @RequestParam(value = "imageFile", required = false) MultipartFile imageFile,
             HttpSession session,
             RedirectAttributes redirectAttributes) {
         String adminUsername = (String) session.getAttribute("adminUsername");
@@ -423,10 +412,26 @@ public class AdminController {
             return "redirect:/login";
         }
         try {
+            // Handle image upload
+            if (imageFile != null && !imageFile.isEmpty()) {
+                String imageUrl = fileStorageService.storeFile(imageFile);
+                itemDTO.setImageUrl(imageUrl);
+            } else {
+                // Keep existing image if no new file uploaded and editing
+                if (itemDTO.getItemId() != null) {
+                    ItemDTO existingItem = itemService.getItemById(itemDTO.getItemId());
+                    if (itemDTO.getImageUrl() == null || itemDTO.getImageUrl().isEmpty()) {
+                        itemDTO.setImageUrl(existingItem.getImageUrl());
+                    }
+                }
+            }
+
             if (itemDTO.getItemId() == null) {
                 itemService.createItem(itemDTO);
                 redirectAttributes.addFlashAttribute("success", "Item created successfully");
             } else {
+                // If checking existing item logic above didn't set URL (e.g. creating new),
+                // handled by service or simply null
                 itemService.updateItem(itemDTO.getItemId(), itemDTO);
                 redirectAttributes.addFlashAttribute("success", "Item updated successfully");
             }
@@ -785,7 +790,7 @@ public class AdminController {
 
         // Define available statuses
         List<String> availableStatuses = List.of(
-                "PENDING_CONFIRMATION", "PROCESSING", "SHIPPED", "DELIVERED", "DONE", "CANCELLED");
+                "PENDING", "PROCESSING", "SHIPPED", "DELIVERED", "DONE", "CANCELLED");
 
         model.addAttribute("orders", orders);
         model.addAttribute("availableStatuses", availableStatuses);

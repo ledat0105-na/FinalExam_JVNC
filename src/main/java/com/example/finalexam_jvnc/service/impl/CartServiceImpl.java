@@ -152,6 +152,7 @@ public class CartServiceImpl implements CartService {
                         .unitPrice(item.getUnitPrice())
                         .quantity(item.getQuantity())
                         .totalPrice(item.getUnitPrice() * item.getQuantity())
+                        .imgUrl(item.getItem().getImageUrl())
                         .build())
                 .collect(java.util.stream.Collectors.toList());
 

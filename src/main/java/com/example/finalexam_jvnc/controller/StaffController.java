@@ -62,7 +62,7 @@ public class StaffController {
             return "redirect:/login";
         }
 
-        // Count new orders (PENDING_CONFIRMATION status)
+        // Count new orders (PENDING status)
         long newOrdersCount = 0;
         try {
             List<OrderDTO> pendingOrders = orderService.getOrdersByStatus("PENDING_CONFIRMATION");
@@ -345,7 +345,7 @@ public class StaffController {
 
         // Define available statuses
         List<String> availableStatuses = List.of(
-                "PENDING_CONFIRMATION", "PROCESSING", "SHIPPED", "DELIVERED", "DONE", "CANCELLED");
+                "PENDING", "PROCESSING", "SHIPPED", "DELIVERED", "DONE", "CANCELLED");
 
         model.addAttribute("orders", orders);
         model.addAttribute("availableStatuses", availableStatuses);

@@ -1,0 +1,48 @@
+/* --- CART PAGE STYLING --- */
+.cart-item-row {
+    transition: all 0.2s ease-in-out;
+    background-color: #fff;
+    border: 1px solid #e2e8f0;
+    /* Default border */
+}
+
+.cart-item-row:hover {
+    border-color: var(--ucop-primary);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    background-color: #f8fafc;
+}
+
+/* Payment Method Cards */
+.form-check.position-relative {
+    transition: all 0.2s;
+    cursor: pointer;
+}
+
+.form-check.position-relative:hover {
+    border-color: var(--ucop-primary) !important;
+    background-color: #f0f9ff;
+}
+
+.form-check-input:checked~.form-check-label {
+    color: var(--ucop-primary);
+    font-weight: 600;
+}
+
+.form-check.position-relative:has(.form-check-input:checked) {
+    border-color: var(--ucop-primary) !important;
+    background-color: #f0f9ff;
+    box-shadow: 0 0 0 1px var(--ucop-primary);
+}
+
+/* Sticky Summary Card */
+.sticky-summary {
+    position: sticky;
+    top: 100px;
+    z-index: 10;
+}
+
+@media (max-width: 991px) {
+    .sticky-summary {
+        position: static;
+    }
+}

@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Khách hàng | UCOP</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link th:href="@{/css/style.css}" rel="stylesheet">
+</head>
+
+<body class="customer-dashboard">
+    <!-- Navbar Fragment -->
+    <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+    <div class="container mt-4 mb-5">
+        <div class="page-header mb-4">
+            <h2 class="fw-bold mb-1">Dashboard Khách hàng</h2>
+            <p class="mb-0 opacity-90">Chào mừng, <span th:text="${customerUsername}"
+                    class="fw-bold text-primary"></span>!</p>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm h-100 transition-hover">
+                    <div class="card-body text-center p-4">
+                        <i class="bi bi-cart-check text-primary mb-3" style="font-size: 3rem;"></i>
+                        <h5 class="fw-bold mb-2">Đơn hàng của tôi</h5>
+                        <p class="text-muted mb-4">Xem và theo dõi đơn hàng</p>
+                        <a th:href="@{/customer/orders}" class="btn btn-primary px-4 rounded-pill">Xem đơn hàng</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm h-100 transition-hover">
+                    <div class="card-body text-center p-4">
+                        <i class="bi bi-bag text-success mb-3" style="font-size: 3rem;"></i>
+                        <h5 class="fw-bold mb-2">Giỏ hàng</h5>
+                        <p class="text-muted mb-4">Quản lý sản phẩm trong giỏ hàng</p>
+                        <a th:href="@{/customer/cart}" class="btn btn-outline-success px-4 rounded-pill">Xem giỏ
+                            hàng</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm h-100 transition-hover">
+                    <div class="card-body text-center p-4">
+                        <i class="bi bi-person-circle text-info mb-3" style="font-size: 3rem;"></i>
+                        <h5 class="fw-bold mb-2">Thông tin tài khoản</h5>
+                        <p class="text-muted mb-4">Cập nhật thông tin cá nhân</p>
+                        <a th:href="@{/customer/profile}" class="btn btn-outline-info px-4 rounded-pill">Cập nhật</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm h-100 transition-hover">
+                    <div class="card-body text-center p-4">
+                        <i class="bi bi-key text-warning mb-3" style="font-size: 3rem;"></i>
+                        <h5 class="fw-bold mb-2">Bảo mật</h5>
+                        <p class="text-muted mb-4">Đổi mật khẩu đăng nhập</p>
+                        <a th:href="@{/customer/change-password}"
+                            class="btn btn-outline-warning px-4 rounded-pill text-dark">Đổi mật khẩu</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm h-100 transition-hover">
+                    <div class="card-body text-center p-4">
+                        <i class="bi bi-wallet2 text-success mb-3" style="font-size: 3rem;"></i>
+                        <h5 class="fw-bold mb-2">Ví điện tử</h5>
+                        <p class="text-muted mb-4">Quản lý số dư ví</p>
+                        <a th:href="@{/customer/wallet}" class="btn btn-outline-success px-4 rounded-pill">Xem ví</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm h-100 transition-hover">
+                    <div class="card-body text-center p-4">
+                        <i class="bi bi-shop text-danger mb-3" style="font-size: 3rem;"></i>
+                        <h5 class="fw-bold mb-2">Mua sắm</h5>
+                        <p class="text-muted mb-4">Xem danh sách sản phẩm</p>
+                        <a th:href="@{/customer/products}" class="btn btn-outline-danger px-4 rounded-pill">Xem sản
+                            phẩm</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="text-center py-4 text-muted small border-top bg-white">
+        <div class="container">
+            UCOP Platform &copy; 2023. Universal Commerce & Operations Platform.
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>

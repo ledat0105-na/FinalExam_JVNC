@@ -81,8 +81,12 @@
             <div class="col" th:each="item : ${items}">
                 <div class="product-card h-100 shadow-sm">
                     <div class="product-img-wrapper">
+                        <img th:if="${item.imageUrl != null and !item.imageUrl.isEmpty()}" th:src="${item.imageUrl}"
+                            alt="Product Name"
+                            style="width: 100%; height: 100%; object-fit: cover; position: absolute; top:0; left:0;" />
                         <!-- Placeholder image (would be real image in production) -->
-                        <i class="bi bi-box-seam text-secondary" style="font-size: 4rem; opacity: 0.3;"></i>
+                        <i th:unless="${item.imageUrl != null and !item.imageUrl.isEmpty()}"
+                            class="bi bi-box-seam text-secondary" style="font-size: 4rem; opacity: 0.3;"></i>
                         <span class="product-badge" th:text="${item.categoryName}">Category</span>
 
                         <div class="product-action-overlay">

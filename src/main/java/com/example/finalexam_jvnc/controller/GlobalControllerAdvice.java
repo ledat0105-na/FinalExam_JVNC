@@ -13,12 +13,18 @@ public class GlobalControllerAdvice {
     @Autowired
     private CartService cartService;
 
+    @Autowired
+    private com.example.finalexam_jvnc.service.NotificationService notificationService;
+
     @ModelAttribute
     public void addGlobalAttributes(Model model, HttpSession session) {
         String customerUsername = (String) session.getAttribute("customerUsername");
         if (customerUsername != null) {
             Integer cartItemCount = cartService.getCartItemCount(customerUsername);
             model.addAttribute("navbarCartCount", cartItemCount);
+
+            Long unreadNotificationCount = notificationService.getUnreadCount(customerUsername);
+            model.addAttribute("unreadNotificationCount", unreadNotificationCount);
         }
     }
 }

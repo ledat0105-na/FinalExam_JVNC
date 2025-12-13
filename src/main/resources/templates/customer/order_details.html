@@ -78,9 +78,8 @@
                                 </form>
                             </div>
 
-                            <!-- Refund Button -->
-                            <div th:if="${(order.status == 'CANCELLED' or order.status == 'FAILED') and order.refundId == null}"
-                                class="d-inline-block">
+                            <!-- Refund Button: Only for DONE orders (Returns) -->
+                            <div th:if="${order.status == 'DONE' and order.refundId == null}" class="d-inline-block">
                                 <form th:action="@{'/customer/orders/' + ${order.orderId} + '/refund'}" method="post"
                                     onsubmit="return confirm('Bạn có chắc chắn muốn yêu cầu hoàn tiền cho đơn hàng này không?');">
                                     <button type="submit" class="btn btn-warning text-white fw-bold">

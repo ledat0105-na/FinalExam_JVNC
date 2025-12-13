@@ -70,6 +70,7 @@ public class ItemServiceImpl implements ItemService {
                 .unitPrice(itemDTO.getUnitPrice())
                 .weightKg(itemDTO.getWeightKg())
                 .description(itemDTO.getDescription())
+                .imageUrl(itemDTO.getImageUrl())
                 .isActive(itemDTO.getIsActive() != null ? itemDTO.getIsActive() : true)
                 .build();
 
@@ -100,6 +101,9 @@ public class ItemServiceImpl implements ItemService {
         item.setUnitPrice(itemDTO.getUnitPrice());
         item.setWeightKg(itemDTO.getWeightKg());
         item.setDescription(itemDTO.getDescription());
+        if (itemDTO.getImageUrl() != null) {
+            item.setImageUrl(itemDTO.getImageUrl());
+        }
         if (itemDTO.getIsActive() != null) {
             item.setIsActive(itemDTO.getIsActive());
         }
@@ -241,6 +245,7 @@ public class ItemServiceImpl implements ItemService {
                 .unitPrice(item.getUnitPrice())
                 .weightKg(item.getWeightKg())
                 .description(item.getDescription())
+                .imageUrl(item.getImageUrl())
                 .isActive(item.getIsActive())
                 .build();
     }

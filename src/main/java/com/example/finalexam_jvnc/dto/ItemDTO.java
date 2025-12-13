@@ -20,6 +20,6 @@ public class ItemDTO {
     private Double unitPrice;
     private Double weightKg;
     private String description;
+    private String imageUrl;
     private Boolean isActive;
 }
-
