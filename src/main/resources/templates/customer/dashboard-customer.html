@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Khách hàng | UCOP</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link th:href="@{/css/style.css}" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    
+    <style>
+        :root {
+            --sidebar-width: 260px;
+            --sidebar-collapsed-width: 80px;
+            --header-height: 70px;
+        }
+
+        body.customer-dashboard {
+            padding-top: 0 !important;
+            overflow-x: hidden;
+        }
+
+        /* Sidebar Styles */
+        .customer-sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            width: var(--sidebar-width);
+            background: linear-gradient(180deg, #1e3a8a 0%, #0f172a 100%);
+            color: white;
+            transition: all 0.3s ease;
+            z-index: 1000;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        .customer-sidebar.collapsed {
+            width: var(--sidebar-collapsed-width);
+        }
+
+        .sidebar-header {
+            padding: 1.5rem 1.25rem;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-height: var(--header-height);
+        }
+
+        .sidebar-logo {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #3b82f6 0%, #1e3a8a 100%);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            flex-shrink: 0;
+        }
+
+        .sidebar-brand {
+            font-weight: 700;
+            font-size: 1.25rem;
+            white-space: nowrap;
+            overflow: hidden;
+            transition: opacity 0.3s;
+        }
+
+        .customer-sidebar.collapsed .sidebar-brand {
+            opacity: 0;
+            width: 0;
+        }
+
+        .sidebar-toggle {
+            margin-left: auto;
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: white;
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .sidebar-toggle:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .sidebar-menu {
+            padding: 1rem 0;
+        }
+
+        .sidebar-menu-item {
+            padding: 0.75rem 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: rgba(255,255,255,0.7);
+            text-decoration: none;
+            transition: all 0.2s;
+            border-left: 3px solid transparent;
+            white-space: nowrap;
+        }
+
+        .sidebar-menu-item:hover {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-left-color: #3b82f6;
+        }
+
+        .sidebar-menu-item.active {
+            background: rgba(59, 130, 246, 0.2);
+            color: white;
+            border-left-color: #3b82f6;
+        }
+
+        .sidebar-menu-item i {
+            width: 24px;
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+
+        .sidebar-menu-item span {
+            transition: opacity 0.3s;
+        }
+
+        .customer-sidebar.collapsed .sidebar-menu-item span {
+            opacity: 0;
+            width: 0;
+        }
+
+        /* Main Content Area */
+        .customer-main-content {
+            margin-left: var(--sidebar-width);
+            transition: margin-left 0.3s ease;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+        }
+
+        .customer-main-content.sidebar-collapsed {
+            margin-left: var(--sidebar-collapsed-width);
+        }
+
+        .customer-header {
+            background: white;
+            height: var(--header-height);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .customer-header-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #0f172a;
+            margin: 0;
+        }
+
+        .customer-header-right {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .customer-user-info {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .customer-user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #3b82f6 0%, #1e3a8a 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+        }
+
+        /* Dashboard Content */
+        .dashboard-content {
+            padding: 2rem;
+        }
+
+        /* Stat Cards */
+        .stat-card-modern {
+            background: white;
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            transition: all 0.3s;
+            border-left: 4px solid;
+            height: 100%;
+        }
+
+        .stat-card-modern:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+
+        .stat-card-modern.primary { border-left-color: #3b82f6; }
+        .stat-card-modern.success { border-left-color: #10b981; }
+        .stat-card-modern.warning { border-left-color: #f59e0b; }
+        .stat-card-modern.danger { border-left-color: #ef4444; }
+        .stat-card-modern.info { border-left-color: #06b6d4; }
+        .stat-card-modern.purple { border-left-color: #8b5cf6; }
+
+        .stat-icon-modern {
+            width: 56px;
+            height: 56px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .stat-card-modern.primary .stat-icon-modern { background: #dbeafe; color: #3b82f6; }
+        .stat-card-modern.success .stat-icon-modern { background: #d1fae5; color: #10b981; }
+        .stat-card-modern.warning .stat-icon-modern { background: #fef3c7; color: #f59e0b; }
+        .stat-card-modern.danger .stat-icon-modern { background: #fee2e2; color: #ef4444; }
+        .stat-card-modern.info .stat-icon-modern { background: #cffafe; color: #06b6d4; }
+        .stat-card-modern.purple .stat-icon-modern { background: #ede9fe; color: #8b5cf6; }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #0f172a;
+            margin: 0.5rem 0;
+        }
+
+        .stat-label {
+            font-size: 0.875rem;
+            color: #64748b;
+            font-weight: 500;
+        }
+
+        /* Welcome Section */
+        .welcome-section {
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            border-radius: 20px;
+            padding: 2.5rem;
+            margin-bottom: 2rem;
+            color: white;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(30,58,138,0.2);
+        }
+
+        .welcome-section::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -10%;
+            width: 300px;
+            height: 300px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 50%;
+        }
+
+        .welcome-section::after {
+            content: '';
+            position: absolute;
+            bottom: -30%;
+            right: 5%;
+            width: 200px;
+            height: 200px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 50%;
+        }
+
+        .welcome-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .welcome-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .welcome-subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            margin-bottom: 1.5rem;
+        }
+
+        .welcome-actions {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        @media (max-width: 768px) {
+            .customer-sidebar {
+                transform: translateX(-100%);
+            }
+            
+            .customer-sidebar.show {
+                transform: translateX(0);
+            }
+            
+            .customer-main-content {
+                margin-left: 0;
+            }
+        }
+    </style>
+</head>
+
+<body class="customer-dashboard">
+    <!-- Sidebar -->
+    <aside class="customer-sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo">
+                <i class="bi bi-shield-check"></i>
+            </div>
+            <div class="sidebar-brand">UCOP</div>
+            <button class="sidebar-toggle" onclick="toggleSidebar()">
+                <i class="bi bi-list"></i>
+            </button>
+        </div>
+        <nav class="sidebar-menu">
+            <a th:href="@{/customer/dashboard}" class="sidebar-menu-item active">
+                <i class="bi bi-speedometer2"></i>
+                <span>Dashboard</span>
+            </a>
+            <a th:href="@{/customer/products}" class="sidebar-menu-item">
+                <i class="bi bi-shop"></i>
+                <span>Sản phẩm</span>
+            </a>
+            <a th:href="@{/customer/cart}" class="sidebar-menu-item">
+                <i class="bi bi-cart3"></i>
+                <span>Giỏ hàng</span>
+            </a>
+            <a th:href="@{/customer/orders}" class="sidebar-menu-item">
+                <i class="bi bi-box-seam"></i>
+                <span>Đơn hàng</span>
+            </a>
+            <a th:href="@{/customer/wallet}" class="sidebar-menu-item">
+                <i class="bi bi-wallet2"></i>
+                <span>Ví tiền</span>
+            </a>
+            <a th:href="@{/customer/profile}" class="sidebar-menu-item">
+                <i class="bi bi-person-gear"></i>
+                <span>Hồ sơ</span>
+            </a>
+            <a th:href="@{/customer/change-password}" class="sidebar-menu-item">
+                <i class="bi bi-shield-lock"></i>
+                <span>Đổi mật khẩu</span>
+            </a>
+            <a th:href="@{/logout}" class="sidebar-menu-item">
+                <i class="bi bi-box-arrow-right"></i>
+                <span>Đăng xuất</span>
+            </a>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="customer-main-content" id="mainContent">
+        <!-- Header -->
+        <div class="customer-header">
+            <h1 class="customer-header-title">Dashboard</h1>
+            <div class="customer-header-right">
+                <div class="customer-user-info">
+                    <div class="customer-user-avatar">
+                        <i class="bi bi-person"></i>
+                    </div>
+                    <div>
+                        <div class="fw-bold" th:text="${customerUsername}">Customer</div>
+                        <small class="text-muted">Khách hàng</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dashboard Content -->
+        <div class="dashboard-content">
+            <!-- Welcome Section -->
+            <div class="welcome-section">
+                <div class="welcome-content">
+                    <h1 class="welcome-title">
+                        Xin chào, <span th:text="${customerUsername}">Khách hàng</span>! 👋
+                    </h1>
+                    <p class="welcome-subtitle">Chào mừng bạn trở lại với UCOP. Hôm nay bạn muốn làm gì?</p>
+                    <div class="welcome-actions">
+                        <a th:href="@{/customer/products}" class="btn btn-light text-primary fw-bold px-4 py-2 rounded-pill shadow-sm">
+                            <i class="bi bi-shop me-2"></i>Mua sắm ngay
+                        </a>
+                        <a th:href="@{/customer/wallet}" class="btn btn-outline-light fw-bold px-4 py-2 rounded-pill">
+                            <i class="bi bi-wallet2 me-2"></i>Nạp ví
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Statistics Cards -->
+            <div class="row g-4 mb-4">
+                <div class="col-md-6 col-lg-3">
+                    <div class="stat-card-modern primary">
+                        <div class="stat-icon-modern">
+                            <i class="bi bi-box-seam"></i>
+                        </div>
+                        <div class="stat-value" th:text="${totalOrders}">0</div>
+                        <div class="stat-label">Tổng đơn hàng</div>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-3">
+                    <div class="stat-card-modern success">
+                        <div class="stat-icon-modern">
+                            <i class="bi bi-check-circle"></i>
+                        </div>
+                        <div class="stat-value" th:text="${completedOrders}">0</div>
+                        <div class="stat-label">Đơn đã hoàn thành</div>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-3">
+                    <div class="stat-card-modern warning">
+                        <div class="stat-icon-modern">
+                            <i class="bi bi-clock-history"></i>
+                        </div>
+                        <div class="stat-value" th:text="${pendingOrders}">0</div>
+                        <div class="stat-label">Đơn đang xử lý</div>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-3">
+                    <div class="stat-card-modern info">
+                        <div class="stat-icon-modern">
+                            <i class="bi bi-cart3"></i>
+                        </div>
+                        <div class="stat-value" th:text="${cartItemCount}">0</div>
+                        <div class="stat-label">Sản phẩm trong giỏ</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-4 mb-4">
+                <div class="col-md-6">
+                    <div class="stat-card-modern purple">
+                        <div class="stat-icon-modern">
+                            <i class="bi bi-currency-dollar"></i>
+                        </div>
+                        <div class="stat-value" th:text="${#numbers.formatDecimal(totalSpent, 0, 'COMMA', 0, 'POINT')} + ' đ'">0 đ</div>
+                        <div class="stat-label">Tổng tiền đã mua</div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="stat-card-modern danger">
+                        <div class="stat-icon-modern">
+                            <i class="bi bi-wallet2"></i>
+                        </div>
+                        <div class="stat-value" th:text="${#numbers.formatDecimal(walletBalance, 0, 'COMMA', 0, 'POINT')} + ' đ'">0 đ</div>
+                        <div class="stat-label">Số dư ví</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="row g-4">
+                <div class="col-12">
+                    <h5 class="fw-bold mb-3">Thao tác nhanh</h5>
+                </div>
+                <div class="col-md-6 col-lg-3">
+                    <a th:href="@{/customer/products}" class="text-decoration-none">
+                        <div class="card border-0 shadow-sm h-100 hover-elevate">
+                            <div class="card-body text-center p-4">
+                                <i class="bi bi-shop text-primary mb-3" style="font-size: 3rem;"></i>
+                                <h6 class="fw-bold mb-2">Mua sắm</h6>
+                                <p class="text-muted small mb-0">Khám phá sản phẩm</p>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-md-6 col-lg-3">
+                    <a th:href="@{/customer/orders}" class="text-decoration-none">
+                        <div class="card border-0 shadow-sm h-100 hover-elevate">
+                            <div class="card-body text-center p-4">
+                                <i class="bi bi-box-seam text-success mb-3" style="font-size: 3rem;"></i>
+                                <h6 class="fw-bold mb-2">Đơn hàng</h6>
+                                <p class="text-muted small mb-0">Theo dõi đơn hàng</p>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-md-6 col-lg-3">
+                    <a th:href="@{/customer/wallet}" class="text-decoration-none">
+                        <div class="card border-0 shadow-sm h-100 hover-elevate">
+                            <div class="card-body text-center p-4">
+                                <i class="bi bi-wallet2 text-warning mb-3" style="font-size: 3rem;"></i>
+                                <h6 class="fw-bold mb-2">Ví tiền</h6>
+                                <p class="text-muted small mb-0">Quản lý ví</p>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-md-6 col-lg-3">
+                    <a th:href="@{/customer/profile}" class="text-decoration-none">
+                        <div class="card border-0 shadow-sm h-100 hover-elevate">
+                            <div class="card-body text-center p-4">
+                                <i class="bi bi-person-gear text-info mb-3" style="font-size: 3rem;"></i>
+                                <h6 class="fw-bold mb-2">Hồ sơ</h6>
+                                <p class="text-muted small mb-0">Cập nhật thông tin</p>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .hover-elevate {
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .hover-elevate:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1) !important;
+        }
+    </style>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const mainContent = document.getElementById('mainContent');
+            sidebar.classList.toggle('collapsed');
+            mainContent.classList.toggle('sidebar-collapsed');
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+    <aside th:fragment="admin-sidebar" class="admin-sidebar" id="adminSidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo">
+                <i class="bi bi-shield-check"></i>
+            </div>
+            <div class="sidebar-brand">UCOP Admin</div>
+            <button class="sidebar-toggle" onclick="toggleSidebar()">
+                <i class="bi bi-list"></i>
+            </button>
+        </div>
+        <nav class="sidebar-menu">
+            <a href="/admin/dashboard" class="sidebar-menu-item" th:classappend="${#httpServletRequest != null and (#httpServletRequest.requestURI == '/admin/dashboard' or #httpServletRequest.requestURI == '/admin/dashboard/') ? 'active' : ''}">
+                <i class="bi bi-speedometer2"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="/admin/accounts" class="sidebar-menu-item" th:classappend="${#httpServletRequest != null and (#strings.contains(#httpServletRequest.requestURI, '/admin/accounts') or #strings.contains(#httpServletRequest.requestURI, '/admin/wallet/deposit')) ? 'active' : ''}">
+                <i class="bi bi-people"></i>
+                <span>Tài khoản</span>
+            </a>
+            <a href="/admin/items" class="sidebar-menu-item" th:classappend="${#httpServletRequest != null and #strings.contains(#httpServletRequest.requestURI, '/admin/items') ? 'active' : ''}">
+                <i class="bi bi-box-seam"></i>
+                <span>Sản phẩm</span>
+            </a>
+            <a href="/admin/categories" class="sidebar-menu-item" th:classappend="${#httpServletRequest != null and #strings.contains(#httpServletRequest.requestURI, '/admin/categories') ? 'active' : ''}">
+                <i class="bi bi-tags"></i>
+                <span>Danh mục</span>
+            </a>
+            <a href="/admin/orders" class="sidebar-menu-item" th:classappend="${#httpServletRequest != null and #strings.contains(#httpServletRequest.requestURI, '/admin/orders') ? 'active' : ''}">
+                <i class="bi bi-cart-check"></i>
+                <span>Đơn hàng</span>
+            </a>
+            <a href="/admin/shipments" class="sidebar-menu-item" th:classappend="${#httpServletRequest != null and #strings.contains(#httpServletRequest.requestURI, '/admin/shipments') ? 'active' : ''}">
+                <i class="bi bi-truck"></i>
+                <span>Vận đơn</span>
+            </a>
+            <a href="/admin/refunds" class="sidebar-menu-item" th:classappend="${#httpServletRequest != null and #strings.contains(#httpServletRequest.requestURI, '/admin/refunds') ? 'active' : ''}">
+                <i class="bi bi-arrow-counterclockwise"></i>
+                <span>Hoàn tiền</span>
+            </a>
+            <a href="/admin/promotions" class="sidebar-menu-item" th:classappend="${#httpServletRequest != null and #strings.contains(#httpServletRequest.requestURI, '/admin/promotions') ? 'active' : ''}">
+                <i class="bi bi-ticket-perforated"></i>
+                <span>Khuyến mãi</span>
+            </a>
+            <a href="/admin/warehouses" class="sidebar-menu-item" th:classappend="${#httpServletRequest != null and #strings.contains(#httpServletRequest.requestURI, '/admin/warehouses') ? 'active' : ''}">
+                <i class="bi bi-building"></i>
+                <span>Kho hàng</span>
+            </a>
+            <a href="/admin/stock/low-stock" class="sidebar-menu-item" th:classappend="${#httpServletRequest != null and #strings.contains(#httpServletRequest.requestURI, '/admin/stock') ? 'active' : ''}">
+                <i class="bi bi-exclamation-triangle"></i>
+                <span>Cảnh báo tồn kho</span>
+            </a>
+            <a href="/admin/revenue-report" class="sidebar-menu-item" th:classappend="${#httpServletRequest != null and #strings.contains(#httpServletRequest.requestURI, '/admin/revenue-report') ? 'active' : ''}">
+                <i class="bi bi-graph-up-arrow"></i>
+                <span>Báo cáo doanh thu</span>
+            </a>
+            <a href="/admin/audit-log" class="sidebar-menu-item" th:classappend="${#httpServletRequest != null and #strings.contains(#httpServletRequest.requestURI, '/admin/audit-log') ? 'active' : ''}">
+                <i class="bi bi-file-earmark-bar-graph"></i>
+                <span>Audit Log</span>
+            </a>
+            <a href="/admin/fees" class="sidebar-menu-item" th:classappend="${#httpServletRequest != null and #strings.contains(#httpServletRequest.requestURI, '/admin/fees') ? 'active' : ''}">
+                <i class="bi bi-cash-coin"></i>
+                <span>Cấu hình phí</span>
+            </a>
+            <a href="/logout" class="sidebar-menu-item">
+                <i class="bi bi-box-arrow-right"></i>
+                <span>Đăng xuất</span>
+            </a>
+        </nav>
+    </aside>
+    <script>
+        // Đảm bảo active state hoạt động cho tất cả menu item
+        document.addEventListener('DOMContentLoaded', function() {
+            const currentPath = window.location.pathname;
+            const menuItems = document.querySelectorAll('.sidebar-menu-item');
+            
+            menuItems.forEach(item => {
+                const href = item.getAttribute('href');
+                if (href && href !== '/logout') {
+                    // Kiểm tra nếu current path chứa href path
+                    if (currentPath.includes(href) || currentPath === href || currentPath === href + '/') {
+                        // Tránh conflict: nếu là /admin/orders thì không active /admin/orders/update-status
+                        if (href === '/admin/dashboard') {
+                            if (currentPath === '/admin/dashboard' || currentPath === '/admin/dashboard/') {
+                                item.classList.add('active');
+                            }
+                        } else if (href === '/admin/orders') {
+                            if (currentPath.includes('/admin/orders') && !currentPath.includes('/admin/orders/update-status')) {
+                                item.classList.add('active');
+                            }
+                        } else {
+                            item.classList.add('active');
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>
+

@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chi tiết sản phẩm | UCOP</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link th:href="@{/css/style.css}" rel="stylesheet">
+    <link th:href="@{/css/admin-layout.css}" rel="stylesheet">
+    <style>
+        .product-image-large {
+            width: 100%;
+            max-width: 500px;
+            height: auto;
+            border-radius: 12px;
+            border: 2px solid #e9ecef;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .product-image-placeholder-large {
+            width: 100%;
+            max-width: 500px;
+            height: 400px;
+            background: #f8f9fa;
+            border: 2px dashed #dee2e6;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #6c757d;
+            font-size: 3rem;
+        }
+        .detail-card {
+            border: none;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border-radius: 12px;
+        }
+        .detail-label {
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 0.5rem;
+        }
+        .detail-value {
+            color: #212529;
+            font-size: 1rem;
+        }
+        .info-badge {
+            font-size: 0.875rem;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body class="admin-dashboard">
+    <div th:replace="~{fragments/admin-sidebar :: admin-sidebar}"></div>
+    
+    <main class="admin-main-content" id="mainContent">
+        <div th:replace="~{fragments/admin-header :: admin-header('Chi tiết sản phẩm')}"></div>
+        
+        <div class="dashboard-content">
+            <div class="container-fluid">
+                <div th:if="${success}" class="alert alert-success alert-dismissible fade show border-0 shadow-sm" role="alert">
+                    <i class="bi bi-check-circle me-2"></i><span th:text="${success}"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                <div th:if="${error}" class="alert alert-danger alert-dismissible fade show border-0 shadow-sm" role="alert">
+                    <i class="bi bi-exclamation-triangle me-2"></i><span th:text="${error}"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+                    <div>
+                        <h2 class="fw-bold mb-1">Chi tiết sản phẩm</h2>
+                        <p class="mb-0 text-muted">Thông tin chi tiết về sản phẩm</p>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <a th:href="@{/admin/items}" class="btn btn-outline-secondary fw-bold shadow-sm">
+                            <i class="bi bi-arrow-left me-2"></i>Quay lại
+                        </a>
+                        <a th:href="@{/admin/items/{id}/edit(id=${item.itemId})}" class="btn btn-primary fw-bold shadow-sm">
+                            <i class="bi bi-pencil me-2"></i>Sửa sản phẩm
+                        </a>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <!-- Hình ảnh sản phẩm -->
+                    <div class="col-lg-4 mb-4">
+                        <div class="card detail-card">
+                            <div class="card-body text-center">
+                                <img th:if="${item.hasImage != null and item.hasImage}"
+                                    th:src="@{/admin/items/{id}/image(id=${item.itemId})}" 
+                                    alt="Product Image" class="product-image-large" />
+                                <div th:unless="${item.hasImage != null and item.hasImage}"
+                                    class="product-image-placeholder-large">
+                                    <i class="bi bi-image"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Thông tin chi tiết -->
+                    <div class="col-lg-8">
+                        <div class="card detail-card mb-4">
+                            <div class="card-header bg-white border-bottom">
+                                <h5 class="mb-0 fw-bold"><i class="bi bi-info-circle me-2"></i>Thông tin cơ bản</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row mb-3">
+                                    <div class="col-md-6 mb-3">
+                                        <div class="detail-label">ID Sản phẩm</div>
+                                        <div class="detail-value fw-bold text-primary" th:text="'#' + ${item.itemId}"></div>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <div class="detail-label">SKU</div>
+                                        <div class="detail-value fw-bold" th:text="${item.sku}"></div>
+                                    </div>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-12 mb-3">
+                                        <div class="detail-label">Tên sản phẩm</div>
+                                        <div class="detail-value fw-semibold fs-5" th:text="${item.itemName}"></div>
+                                    </div>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-md-6 mb-3">
+                                        <div class="detail-label">Danh mục</div>
+                                        <div>
+                                            <span class="badge bg-info info-badge" th:text="${item.categoryName}"></span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <div class="detail-label">Trạng thái</div>
+                                        <div>
+                                            <span th:if="${item.isActive}" class="badge bg-success info-badge">
+                                                <i class="bi bi-check-circle-fill me-1"></i>Hoạt động
+                                            </span>
+                                            <span th:unless="${item.isActive}" class="badge bg-danger info-badge">
+                                                <i class="bi bi-x-circle-fill me-1"></i>Không hoạt động
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card detail-card mb-4">
+                            <div class="card-header bg-white border-bottom">
+                                <h5 class="mb-0 fw-bold"><i class="bi bi-box-seam me-2"></i>Thông tin sản phẩm</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row mb-3">
+                                    <div class="col-md-6 mb-3">
+                                        <div class="detail-label">Loại sản phẩm</div>
+                                        <div class="detail-value">
+                                            <span class="badge bg-secondary" th:text="${item.itemType}"></span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <div class="detail-label">Đơn vị</div>
+                                        <div class="detail-value fw-semibold" th:text="${item.unitName}"></div>
+                                    </div>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-md-6 mb-3">
+                                        <div class="detail-label">Đơn giá</div>
+                                        <div class="detail-value fw-bold text-primary fs-5" 
+                                            th:text="${#numbers.formatDecimal(item.unitPrice, 0, 'COMMA', 0, 'POINT')} + ' đ'">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <div class="detail-label">Trọng lượng (kg)</div>
+                                        <div class="detail-value" th:text="${item.weightKg != null ? item.weightKg : 'N/A'}"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card detail-card" th:if="${item.description != null and !item.description.isEmpty()}">
+                            <div class="card-header bg-white border-bottom">
+                                <h5 class="mb-0 fw-bold"><i class="bi bi-file-text me-2"></i>Mô tả</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="detail-value" th:text="${item.description}"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script th:src="@{/js/admin-layout.js}"></script>
+</body>
+</html>
+

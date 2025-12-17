@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tạo cấu hình hệ thống | UCOP Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link th:href="@{/css/style.css}" rel="stylesheet">
+    <link th:href="@{/css/admin-layout.css}" rel="stylesheet">
+</head>
+<body class="admin-dashboard">
+    <div th:replace="~{fragments/admin-sidebar :: admin-sidebar}"></div>
+    
+    <main class="admin-main-content" id="mainContent">
+        <div th:replace="~{fragments/admin-header :: admin-header('Tạo cấu hình hệ thống')}"></div>
+        
+        <div class="dashboard-content">
+<div class="container-fluid">
+    <div th:if="${error}" class="alert alert-danger d-flex align-items-center mb-4" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2 fs-5"></i>
+        <div th:text="${error}"></div>
+        <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"></button>
+    </div>
+
+    <div class="page-header mb-4">
+        <h2 class="fw-bold mb-1"><i class="bi bi-gear me-2"></i>Tạo cấu hình hệ thống mới</h2>
+        <p class="mb-0 opacity-75">Thêm cấu hình hệ thống mới như phí vận chuyển, thuế, phí COD, phí cổng thanh toán.</p>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <form th:action="@{/admin/system-config}" th:object="${config}" method="post">
+                        <input type="hidden" th:field="*{configId}"/>
+                        
+                        <div class="mb-3">
+                            <label for="configKey" class="form-label fw-bold">Mã cấu hình <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="configKey" th:field="*{configKey}" required maxlength="100" placeholder="VD: SHIPPING_FEE, TAX_RATE, COD_FEE, GATEWAY_FEE"/>
+                            <small class="text-muted">Mã cấu hình phải là duy nhất và viết hoa, cách nhau bằng dấu gạch dưới (VD: SHIPPING_FEE)</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="configName" class="form-label fw-bold">Tên cấu hình <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="configName" th:field="*{configName}" required maxlength="200" placeholder="VD: Phí vận chuyển"/>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="configValue" class="form-label fw-bold">Giá trị <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="configValue" th:field="*{configValue}" required placeholder="VD: 30000 hoặc 0.1"/>
+                            <small class="text-muted">Nhập giá trị số (VD: 30000 cho phí vận chuyển, 0.1 cho tỷ lệ thuế 10%)</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="description" class="form-label fw-bold">Mô tả</label>
+                            <textarea class="form-control" id="description" th:field="*{description}" rows="3" placeholder="Mô tả về cấu hình này..."></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="isActive" th:field="*{isActive}" th:checked="${config.isActive != null ? config.isActive : true}"/>
+                                <label class="form-check-label" for="isActive">Hoạt động</label>
+                            </div>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary"><i class="bi bi-save me-2"></i>Lưu</button>
+                            <a th:href="@{/admin/system-config}" class="btn btn-light">Hủy</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="mt-4">
+                <div class="alert alert-info d-flex align-items-start" role="alert">
+                    <i class="bi bi-info-circle-fill me-2 mt-1"></i>
+                    <div>
+                        <strong>Gợi ý các mã cấu hình thường dùng:</strong>
+                        <ul class="mb-0 mt-2">
+                            <li><strong>SHIPPING_FEE:</strong> Phí vận chuyển (VNĐ)</li>
+                            <li><strong>TAX_RATE:</strong> Tỷ lệ thuế (số thập phân, VD: 0.1 = 10%)</li>
+                            <li><strong>COD_FEE:</strong> Phí thu hộ COD (VNĐ)</li>
+                            <li><strong>GATEWAY_FEE:</strong> Phí cổng thanh toán (VNĐ hoặc %)</li>
+                            <li><strong>MIN_ORDER_VALUE:</strong> Giá trị đơn hàng tối thiểu (VNĐ)</li>
+                            <li><strong>MAX_ORDER_VALUE:</strong> Giá trị đơn hàng tối đa (VNĐ)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+        </div>
+    </main>
+    
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script th:src="@{/js/admin-layout.js}"></script>
+</body>
+</html>
+

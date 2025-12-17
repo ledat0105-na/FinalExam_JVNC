@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chi tiết tài khoản | UCOP</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link th:href="@{/css/style.css}" rel="stylesheet">
+    <link th:href="@{/css/admin-layout.css}" rel="stylesheet">
+</head>
+<body class="admin-dashboard">
+    <div th:replace="~{fragments/admin-sidebar :: admin-sidebar}"></div>
+    
+    <main class="admin-main-content" id="mainContent">
+        <div th:replace="~{fragments/admin-header :: admin-header('Chi tiết tài khoản')}"></div>
+        
+        <div class="dashboard-content">
+<div class="container-fluid">
+    <div class="mb-4">
+        <a href="javascript:history.back();" class="btn btn-outline-secondary fw-bold">
+            <i class="bi bi-arrow-left me-2"></i>Quay lại
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card h-100">
+                <div class="card-header bg-white py-3 border-bottom">
+                    <h5 class="mb-0 fw-bold text-primary"><i class="bi bi-person-circle me-2"></i>Hồ sơ người dùng</h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row mb-4 align-items-center">
+                        <div class="col-auto">
+                            <div class="bg-light rounded-circle d-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
+                                <i class="bi bi-person-fill fs-1 text-secondary"></i>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <h3 class="fw-bold mb-1" th:text="${account.username}">Username</h3>
+                            <div class="text-muted" th:text="${account.email}">user@example.com</div>
+                        </div>
+                    </div>
+
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <label class="small text-muted text-uppercase fw-bold">ID Hệ thống</label>
+                            <div class="fs-5 fw-medium" th:text="'#' + ${account.accountId}"></div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="small text-muted text-uppercase fw-bold mb-2 d-block">Trạng thái</label>
+                            <div>
+                                <span th:if="${account.isLocked}" class="badge bg-danger text-white fw-bold px-3 py-2" style="font-size: 0.9rem;"><i class="bi bi-lock me-1"></i> Đã khóa</span>
+                                <span th:unless="${account.isLocked}" class="badge bg-success text-white fw-bold px-3 py-2" style="font-size: 0.9rem;"><i class="bi bi-check-circle me-1"></i> Đang hoạt động</span>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <label class="small text-muted text-uppercase fw-bold mb-2 d-block">Vai trò được cấp</label>
+                            <div>
+                                <span th:each="role : ${account.roleCodes}" 
+                                      class="badge me-2 px-3 py-2 fw-bold" 
+                                      style="font-size: 0.9rem;"
+                                      th:classappend="${role == 'ADMIN'} ? 'bg-danger text-white' : (${role == 'STAFF'} ? 'bg-warning text-dark' : 'bg-info text-white')"
+                                      th:text="${role}"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h6 class="fw-bold mb-3">Hành động quản trị</h6>
+                    <div class="d-grid gap-2">
+                        <a th:href="@{/admin/accounts/{id}/roles(id=${account.accountId})}" class="btn btn-outline-primary fw-medium">
+                            <i class="bi bi-shield-check me-2"></i>Cập nhật Quyền
+                        </a>
+                        <form th:action="@{/admin/accounts/{id}/toggle-lock(id=${account.accountId})}" method="post">
+                            <button type="submit" class="btn w-100 fw-medium" th:classappend="${account.isLocked} ? 'btn-success' : 'btn-danger'">
+                                <i th:class="${account.isLocked} ? 'bi bi-unlock me-2' : 'bi bi-lock me-2'"></i>
+                                <span th:text="${account.isLocked} ? 'Mở khóa tài khoản' : 'Khóa tài khoản'"></span>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card bg-light border-0">
+                <div class="card-body">
+                    <h6 class="fw-bold text-muted mb-3 small text-uppercase">Thông tin hệ thống</h6>
+                    <ul class="list-unstyled mb-0 small">
+                        <li class="mb-2 d-flex justify-content-between">
+                            <span class="text-muted">Ngày tạo:</span>
+                            <span class="fw-medium" th:text="${account.createdAt != null ? #temporals.format(account.createdAt, 'dd/MM/yyyy') : 'N/A'}"></span>
+                        </li>
+                        <li class="mb-2 d-flex justify-content-between">
+                            <span class="text-muted">Cập nhật:</span>
+                            <span class="fw-medium" th:text="${account.updatedAt != null ? #temporals.format(account.updatedAt, 'dd/MM/yyyy') : 'N/A'}"></span>
+                        </li>
+                        <li class="mb-2 d-flex justify-content-between">
+                            <span class="text-muted">Login cuối:</span>
+                            <span class="fw-medium" th:text="${account.lastLoginAt != null ? #temporals.format(account.lastLoginAt, 'dd/MM/yyyy HH:mm') : 'Chưa đăng nhập'}"></span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+        </div>
+    </main>
+    
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script th:src="@{/js/admin-layout.js}"></script>
+</body>
+</html>
+

@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xử lý hoàn tiền | UCOP</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link th:href="@{/css/style.css}" rel="stylesheet">
+    <link th:href="@{/css/staff-layout.css}" rel="stylesheet">
+</head>
+<body class="staff-dashboard">
+    <div th:replace="~{fragments/staff-sidebar :: staff-sidebar}"></div>
+    
+    <main class="staff-main-content" id="mainContent">
+        <div th:replace="~{fragments/staff-header :: staff-header('Xử lý hoàn tiền')}"></div>
+        
+        <div class="dashboard-content">
+            <div th:if="${success}" class="alert alert-success d-flex align-items-center mb-4" role="alert">
+                <i class="bi bi-check-circle-fill me-2 fs-5"></i>
+                <div th:text="${success}"></div>
+                <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"></button>
+            </div>
+            <div th:if="${error}" class="alert alert-danger d-flex align-items-center mb-4" role="alert">
+                <i class="bi bi-exclamation-triangle-fill me-2 fs-5"></i>
+                <div th:text="${error}"></div>
+                <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"></button>
+            </div>
+
+            <div class="d-flex justify-content-end align-items-center flex-wrap gap-2 mb-4">
+                <a href="/staff/dashboard" class="btn btn-outline-secondary fw-bold shadow-sm">
+                    <i class="bi bi-arrow-left me-2"></i>Quay lại
+                </a>
+            </div>
+
+    <!-- Filter Section -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <form method="get" action="/staff/refunds" class="row g-3">
+                <div class="col-md-6">
+                    <label for="status" class="form-label fw-bold">Lọc theo trạng thái:</label>
+                    <select class="form-select" id="status" name="status">
+                        <option value="">Tất cả yêu cầu</option>
+                        <option value="PENDING" th:selected="${selectedStatus == 'PENDING'}">PENDING - Chờ xử lý</option>
+                        <option value="REQUESTED" th:selected="${selectedStatus == 'REQUESTED'}">REQUESTED - Đã yêu cầu</option>
+                        <option value="APPROVED" th:selected="${selectedStatus == 'APPROVED'}">APPROVED - Đã duyệt</option>
+                        <option value="REJECTED" th:selected="${selectedStatus == 'REJECTED'}">REJECTED - Đã từ chối</option>
+                    </select>
+                </div>
+                <div class="col-md-6 d-flex align-items-end gap-2">
+                    <button type="submit" class="btn btn-primary flex-fill">
+                        <i class="bi bi-funnel me-2"></i>Lọc
+                    </button>
+                    <a href="/staff/refunds" class="btn btn-outline-secondary">
+                        <i class="bi bi-x-circle me-2"></i>Xóa
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Refunds List Table -->
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                    <tr>
+                        <th>Mã yêu cầu</th>
+                        <th>Mã đơn hàng</th>
+                        <th>Số tiền hoàn</th>
+                        <th>Lý do</th>
+                        <th>Trạng thái</th>
+                        <th>Ngày yêu cầu</th>
+                        <th>Ngày hoàn thành</th>
+                        <th class="text-end">Thao tác</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="refund : ${refunds}">
+                        <td class="fw-bold" th:text="'REF-' + ${refund.refundId}"></td>
+                        <td class="fw-bold" th:text="${refund.orderNumber}"></td>
+                        <td class="fw-bold text-danger" 
+                            th:text="${#numbers.formatDecimal(refund.refundAmount, 0, 'COMMA', 0, 'POINT')} + ' đ'"></td>
+                        <td>
+                            <small class="text-muted" th:text="${refund.reason}"></small>
+                        </td>
+                        <td>
+                            <span th:switch="${refund.status}">
+                                <span th:case="'PENDING'" class="badge bg-warning text-dark">
+                                    <i class="bi bi-clock"></i> Pending
+                                </span>
+                                <span th:case="'REQUESTED'" class="badge bg-warning text-dark">
+                                    <i class="bi bi-clock"></i> Requested
+                                </span>
+                                <span th:case="'APPROVED'" class="badge bg-success">
+                                    <i class="bi bi-check-circle"></i> Approved
+                                </span>
+                                <span th:case="'REJECTED'" class="badge bg-danger">
+                                    <i class="bi bi-x-circle"></i> Rejected
+                                </span>
+                                <span th:case="'PROCESSING'" class="badge bg-info">
+                                    <i class="bi bi-gear"></i> Processing
+                                </span>
+                                <span th:case="'COMPLETED'" class="badge bg-success">
+                                    <i class="bi bi-check-circle-fill"></i> Completed
+                                </span>
+                                <span th:case="'CANCELLED'" class="badge bg-secondary">
+                                    <i class="bi bi-x-circle-fill"></i> Cancelled
+                                </span>
+                                <span th:case="*" class="badge bg-secondary">
+                                    <i class="bi bi-question-circle"></i> <span th:text="${refund.status}"></span>
+                                </span>
+                            </span>
+                        </td>
+                        <td th:text="${#temporals.format(refund.requestedAt, 'dd/MM/yyyy HH:mm')}"></td>
+                        <td>
+                            <span th:if="${refund.completedAt != null}" 
+                                  th:text="${#temporals.format(refund.completedAt, 'dd/MM/yyyy HH:mm')}"></span>
+                            <span th:if="${refund.completedAt == null}" class="text-muted">-</span>
+                        </td>
+                        <td class="text-end">
+                            <div class="d-flex flex-wrap gap-1 justify-content-end" style="max-width: 280px;">
+                                <form th:action="@{/staff/refunds/{id}/update-status(id=${refund.refundId})}" 
+                                      method="post" 
+                                      onsubmit="return confirm('Bạn có chắc chắn muốn cập nhật trạng thái này sang PENDING?');"
+                                      class="d-inline">
+                                    <input type="hidden" name="status" value="PENDING">
+                                    <button type="submit" class="btn btn-sm btn-outline-secondary" title="Pending">
+                                        <i class="bi bi-clock"></i>
+                                    </button>
+                                </form>
+                                <form th:action="@{/staff/refunds/{id}/update-status(id=${refund.refundId})}" 
+                                      method="post" 
+                                      onsubmit="return confirm('Bạn có chắc chắn muốn cập nhật trạng thái này sang REQUESTED?');"
+                                      class="d-inline">
+                                    <input type="hidden" name="status" value="REQUESTED">
+                                    <button type="submit" class="btn btn-sm btn-outline-warning" title="Requested">
+                                        <i class="bi bi-hourglass-split"></i>
+                                    </button>
+                                </form>
+                                <form th:action="@{/staff/refunds/{id}/update-status(id=${refund.refundId})}" 
+                                      method="post" 
+                                      onsubmit="return confirm('Bạn có chắc chắn muốn cập nhật trạng thái này sang APPROVED?');"
+                                      class="d-inline">
+                                    <input type="hidden" name="status" value="APPROVED">
+                                    <button type="submit" class="btn btn-sm btn-outline-success" title="Approved">
+                                        <i class="bi bi-check-circle"></i>
+                                    </button>
+                                </form>
+                                <form th:action="@{/staff/refunds/{id}/update-status(id=${refund.refundId})}" 
+                                      method="post" 
+                                      onsubmit="return confirm('Bạn có chắc chắn muốn cập nhật trạng thái này sang REJECTED?');"
+                                      class="d-inline">
+                                    <input type="hidden" name="status" value="REJECTED">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Rejected">
+                                        <i class="bi bi-x-circle"></i>
+                                    </button>
+                                </form>
+                                <form th:action="@{/staff/refunds/{id}/update-status(id=${refund.refundId})}" 
+                                      method="post" 
+                                      onsubmit="return confirm('Bạn có chắc chắn muốn cập nhật trạng thái này sang PROCESSING?');"
+                                      class="d-inline">
+                                    <input type="hidden" name="status" value="PROCESSING">
+                                    <button type="submit" class="btn btn-sm btn-outline-info" title="Processing">
+                                        <i class="bi bi-gear"></i>
+                                    </button>
+                                </form>
+                                <form th:action="@{/staff/refunds/{id}/update-status(id=${refund.refundId})}" 
+                                      method="post" 
+                                      onsubmit="return confirm('Bạn có chắc chắn muốn cập nhật trạng thái này sang COMPLETED?');"
+                                      class="d-inline">
+                                    <input type="hidden" name="status" value="COMPLETED">
+                                    <button type="submit" class="btn btn-sm btn-outline-success" title="Completed">
+                                        <i class="bi bi-check-circle-fill"></i>
+                                    </button>
+                                </form>
+                                <form th:action="@{/staff/refunds/{id}/update-status(id=${refund.refundId})}" 
+                                      method="post" 
+                                      onsubmit="return confirm('Bạn có chắc chắn muốn cập nhật trạng thái này sang CANCELLED?');"
+                                      class="d-inline">
+                                    <input type="hidden" name="status" value="CANCELLED">
+                                    <button type="submit" class="btn btn-sm btn-outline-secondary" title="Cancelled">
+                                        <i class="bi bi-x-circle-fill"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(refunds)}">
+                        <td colspan="8" class="text-center text-muted py-4">
+                            <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                            Không có yêu cầu hoàn tiền nào
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-4">
+        <div class="alert alert-info d-flex align-items-start" role="alert">
+            <i class="bi bi-info-circle-fill me-2 mt-1"></i>
+            <div>
+                <strong>Lưu ý:</strong>
+                <ul class="mb-0 mt-2">
+                    <li><strong>PENDING:</strong> Yêu cầu hoàn tiền đang chờ xử lý</li>
+                    <li><strong>REQUESTED:</strong> Yêu cầu hoàn tiền đã được khách hàng gửi</li>
+                    <li><strong>PROCESSING:</strong> Yêu cầu hoàn tiền đang được xử lý</li>
+                    <li><strong>APPROVED:</strong> Yêu cầu hoàn tiền đã được duyệt và hoàn tiền cho khách hàng</li>
+                    <li><strong>REJECTED:</strong> Yêu cầu hoàn tiền đã bị từ chối</li>
+                    <li><strong>COMPLETED:</strong> Yêu cầu hoàn tiền đã hoàn thành</li>
+                    <li><strong>CANCELLED:</strong> Yêu cầu hoàn tiền đã bị hủy</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script th:src="@{/js/admin-layout.js}"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const sidebarToggle = document.querySelector('.sidebar-toggle');
+            const sidebar = document.getElementById('staffSidebar');
+            const mainContent = document.getElementById('mainContent');
+            if (sidebarToggle && sidebar && mainContent) {
+                sidebarToggle.addEventListener('click', function() {
+                    sidebar.classList.toggle('collapsed');
+                    mainContent.classList.toggle('sidebar-collapsed');
+                });
+            }
+            function updateClock() {
+                const now = new Date();
+                const time = now.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+                const date = now.toLocaleDateString('vi-VN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                const clockEl = document.getElementById('clock');
+                const dateEl = document.getElementById('date');
+                if (clockEl) clockEl.textContent = time;
+                if (dateEl) dateEl.textContent = date;
+            }
+            setInterval(updateClock, 1000);
+            updateClock();
+            function setActiveSidebarItem() {
+                const currentPath = window.location.pathname;
+                const menuItems = document.querySelectorAll('.sidebar-menu-item');
+                menuItems.forEach(item => {
+                    const href = item.getAttribute('href');
+                    if (href && href !== '/logout') {
+                        if (currentPath === href || currentPath.startsWith(href + '/')) {
+                            item.classList.add('active');
+                        } else {
+                            item.classList.remove('active');
+                        }
+                    }
+                });
+            }
+            setActiveSidebarItem();
+        });
+    </script>
+</body>
+</html>
+

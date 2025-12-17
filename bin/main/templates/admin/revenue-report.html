@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Báo cáo doanh thu | UCOP</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link th:href="@{/css/style.css}" rel="stylesheet">
+</head>
+<body class="admin-page">
+    <div th:replace="~{fragments/navbar :: navbar}"></div>
+<div class="container mt-4 mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1"><i class="bi bi-graph-up-arrow me-2"></i>Báo cáo doanh thu</h2>
+            <p class="mb-0 opacity-75">Theo dõi, phân tích doanh thu theo ngày, tháng hoặc khoảng thời gian.</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="/admin/dashboard" class="btn btn-light"><i class="bi bi-arrow-left me-2"></i>Dashboard</a>
+        </div>
+    </div>
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <form method="get" action="/admin/revenue-report" class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label for="mode" class="form-label fw-bold">Chế độ xem</label>
+                    <select id="mode" name="mode" class="form-select" th:value="${mode}" onchange="this.form.submit()">
+                        <option value="day" th:selected="${mode=='day'}">Theo ngày</option>
+                        <option value="month" th:selected="${mode=='month'}">Theo tháng</option>
+                        <option value="range" th:selected="${mode=='range'}">Khoảng thời gian</option>
+                    </select>
+                </div>
+                <div th:switch="${mode}">
+                    <div th:case="'day'" class="col-md-3">
+                        <label for="day" class="form-label fw-bold">Ngày</label>
+                        <input type="date" id="day" name="day" class="form-control" th:value="${day}" onchange="this.form.submit()"/>
+                    </div>
+                    <div th:case="'month'" class="col-md-2">
+                        <label for="month" class="form-label fw-bold">Tháng</label>
+                        <select id="month" name="month" class="form-select" onchange="this.form.submit()">
+                            <option th:each="m : ${#numbers.sequence(1,12)}" th:value="${m}" th:text="${m}" th:selected="${month}==${m}"></option>
+                        </select>
+                    </div>
+                    <div th:case="'month'" class="col-md-2">
+                        <label for="year" class="form-label fw-bold">Năm</label>
+                        <input type="number" id="year" name="year" min="2000" max="2100" class="form-control" th:value="${year}" onchange="this.form.submit()"/>
+                    </div>
+                    <div th:case="'range'" class="col-md-3">
+                        <label class="form-label fw-bold">Từ ngày</label>
+                        <input type="date" name="startDate" class="form-control" th:value="${startDate}" onchange="this.form.submit()"/>
+                    </div>
+                    <div th:case="'range'" class="col-md-3">
+                        <label class="form-label fw-bold">Đến ngày</label>
+                        <input type="date" name="endDate" class="form-control" th:value="${endDate}" onchange="this.form.submit()"/>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <h5 class="mb-3 fw-bold"><i class="bi bi-receipt-cutoff me-2"></i>Kết quả báo cáo <span th:text="${report.period}"></span></h5>
+            <div class="row row-cols-1 row-cols-md-3 g-4 mb-4">
+                <div class="col">
+                    <div class="stat-card">
+                        <div class="stat-icon bg-success bg-opacity-10 text-success"><i class="bi bi-currency-dollar"></i></div>
+                        <h6 class="text-muted text-uppercase ls-1 fw-bold small">Tổng doanh thu</h6>
+                        <h3 class="fw-bold mb-0" th:text="${#numbers.formatDecimal(report.totalRevenue, 0, 'COMMA', 0, 'POINT')} + ' đ'"></h3>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="stat-card">
+                        <div class="stat-icon bg-primary bg-opacity-10 text-primary"><i class="bi bi-bag-check"></i></div>
+                        <h6 class="text-muted text-uppercase ls-1 fw-bold small">Số đơn hoàn thành</h6>
+                        <h3 class="fw-bold mb-0" th:text="${report.totalOrders}"></h3>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="stat-card">
+                        <div class="stat-icon bg-info bg-opacity-10 text-info"><i class="bi bi-calculator"></i></div>
+                        <h6 class="text-muted text-uppercase ls-1 fw-bold small">Doanh thu TB/đơn</h6>
+                        <h3 class="fw-bold mb-0" th:text="${#numbers.formatDecimal(report.averageOrderValue, 0, 'COMMA', 0, 'POINT')} + ' đ'"></h3>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="stat-card">
+                        <div class="stat-icon bg-danger bg-opacity-10 text-danger"><i class="bi bi-arrow-counterclockwise"></i></div>
+                        <h6 class="text-muted text-uppercase ls-1 fw-bold small">Tổng tiền hoàn</h6>
+                        <h3 class="fw-bold mb-0" th:text="${#numbers.formatDecimal(report.totalRefundAmount, 0, 'COMMA', 0, 'POINT')} + ' đ'"></h3>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="stat-card">
+                        <div class="stat-icon bg-danger bg-opacity-10 text-danger"><i class="bi bi-x-octagon"></i></div>
+                        <h6 class="text-muted text-uppercase ls-1 fw-bold small">Số đơn bị hoàn</h6>
+                        <h3 class="fw-bold mb-0" th:text="${report.totalRefunds}"></h3>
+                    </div>
+                </div>
+            </div>
+            <div class="alert alert-info mt-4">
+                <span>Chọn chế độ báo cáo (ngày, tháng, khoảng thời gian) và giá trị thời gian để xem tổng quan doanh thu.</span>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -7,9 +7,14 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "Orders")
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Order {
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long orderId;
 
     @ManyToOne
@@ -20,6 +25,7 @@ public class Order {
     private String status;
     private String shippingAddress;
     private String billingAddress;
+    private String paymentMethod; // COD, WALLET, BANK_TRANSFER
 
     private Double subtotal = 0.0;
     private Double discountTotal = 0.0;
@@ -32,4 +38,3 @@ public class Order {
 
     private LocalDateTime createdAt;
 }
-

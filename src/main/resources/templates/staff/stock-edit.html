@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chỉnh sửa tồn kho | UCOP</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link th:href="@{/css/style.css}" rel="stylesheet">
+    <link th:href="@{/css/staff-layout.css}" rel="stylesheet">
+</head>
+<body class="staff-dashboard">
+    <div th:replace="~{fragments/staff-sidebar :: staff-sidebar}"></div>
+    
+    <main class="staff-main-content" id="mainContent">
+        <div th:replace="~{fragments/staff-header :: staff-header('Chỉnh sửa tồn kho')}"></div>
+        
+        <div class="dashboard-content">
+    <div th:if="${success}" class="alert alert-success d-flex align-items-center mb-4" role="alert">
+        <i class="bi bi-check-circle-fill me-2 fs-5"></i>
+        <div th:text="${success}"></div>
+        <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"></button>
+    </div>
+    <div th:if="${error}" class="alert alert-danger d-flex align-items-center mb-4" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2 fs-5"></i>
+        <div th:text="${error}"></div>
+        <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"></button>
+    </div>
+
+            <div class="d-flex justify-content-end align-items-center flex-wrap gap-2 mb-4">
+                <a href="/staff/stock" class="btn btn-outline-secondary fw-bold shadow-sm">
+                    <i class="bi bi-arrow-left me-2"></i>Quay lại
+                </a>
+            </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <form th:action="@{/staff/stock/{id}/update(id=${stockItem.stockItemId})}" method="post">
+                        <!-- Product Info -->
+                        <div class="mb-4">
+                            <h5 class="fw-bold mb-3">Thông tin sản phẩm</h5>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label text-muted">Kho:</label>
+                                    <div class="form-control-plaintext fw-bold">
+                                        <span class="badge bg-primary bg-opacity-10 text-primary" th:text="${stockItem.warehouseName}"></span>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label text-muted">Sản phẩm:</label>
+                                    <div class="form-control-plaintext fw-bold" th:text="${stockItem.itemName}"></div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label text-muted">SKU:</label>
+                                    <div class="form-control-plaintext fw-bold" th:text="${stockItem.itemSku}"></div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label text-muted">Đã đặt trước:</label>
+                                    <div class="form-control-plaintext">
+                                        <span class="badge bg-warning bg-opacity-10 text-warning" th:text="${stockItem.quantityReserved}"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        <!-- Stock Quantity -->
+                        <div class="mb-4">
+                            <h5 class="fw-bold mb-3">Số lượng tồn kho</h5>
+                            <div class="mb-3">
+                                <label for="quantityOnHand" class="form-label fw-bold">
+                                    Tồn kho hiện tại <span class="text-danger">*</span>
+                                </label>
+                                <input type="number" 
+                                       class="form-control form-control-lg" 
+                                       id="quantityOnHand" 
+                                       name="quantityOnHand" 
+                                       th:value="${stockItem.quantityOnHand}"
+                                       min="0" 
+                                       required>
+                                <div class="form-text">
+                                    Số lượng sản phẩm hiện có trong kho. Giá trị hiện tại: 
+                                    <strong th:text="${stockItem.quantityOnHand}"></strong>
+                                </div>
+                            </div>
+                            <div class="alert alert-info">
+                                <i class="bi bi-info-circle me-2"></i>
+                                <strong>Khả dụng:</strong> 
+                                <span th:text="${stockItem.availableQuantity}"></span> 
+                                (Tồn kho - Đã đặt trước)
+                            </div>
+                        </div>
+
+                        <!-- Low Stock Threshold -->
+                        <div class="mb-4">
+                            <h5 class="fw-bold mb-3">Ngưỡng cảnh báo</h5>
+                            <div class="mb-3">
+                                <label for="lowStockThreshold" class="form-label fw-bold">
+                                    Ngưỡng cảnh báo tồn kho thấp
+                                </label>
+                                <input type="number" 
+                                       class="form-control" 
+                                       id="lowStockThreshold" 
+                                       name="lowStockThreshold" 
+                                       th:value="${stockItem.lowStockThreshold}"
+                                       min="0">
+                                <div class="form-text">
+                                    Hệ thống sẽ cảnh báo khi tồn kho xuống dưới mức này. 
+                                    Để trống nếu không muốn thiết lập cảnh báo.
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle me-2"></i>Cập nhật
+                            </button>
+                            <a th:href="@{/staff/stock}" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle me-2"></i>Hủy
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Info Sidebar -->
+        <div class="col-lg-4">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="fw-bold mb-3"><i class="bi bi-info-circle me-2"></i>Hướng dẫn</h5>
+                    <div class="small">
+                        <p class="mb-3">
+                            <strong>Tồn kho:</strong> Tổng số lượng sản phẩm hiện có trong kho. 
+                            Khi nhập/xuất hàng, bạn cần cập nhật giá trị này.
+                        </p>
+                        <p class="mb-3">
+                            <strong>Đã đặt trước:</strong> Số lượng đã được khách hàng đặt nhưng chưa xuất kho. 
+                            Giá trị này được hệ thống tự động quản lý.
+                        </p>
+                        <p class="mb-3">
+                            <strong>Khả dụng:</strong> Số lượng thực tế có thể sử dụng = Tồn kho - Đã đặt trước.
+                        </p>
+                        <p class="mb-0">
+                            <strong>Ngưỡng cảnh báo:</strong> Khi tồn kho xuống dưới mức này, hệ thống sẽ hiển thị cảnh báo 
+                            để bạn biết cần nhập thêm hàng.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script th:src="@{/js/admin-layout.js}"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const sidebarToggle = document.querySelector('.sidebar-toggle');
+            const sidebar = document.getElementById('staffSidebar');
+            const mainContent = document.getElementById('mainContent');
+            if (sidebarToggle && sidebar && mainContent) {
+                sidebarToggle.addEventListener('click', function() {
+                    sidebar.classList.toggle('collapsed');
+                    mainContent.classList.toggle('sidebar-collapsed');
+                });
+            }
+            function updateClock() {
+                const now = new Date();
+                const time = now.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+                const date = now.toLocaleDateString('vi-VN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                const clockEl = document.getElementById('clock');
+                const dateEl = document.getElementById('date');
+                if (clockEl) clockEl.textContent = time;
+                if (dateEl) dateEl.textContent = date;
+            }
+            setInterval(updateClock, 1000);
+            updateClock();
+            function setActiveSidebarItem() {
+                const currentPath = window.location.pathname;
+                const menuItems = document.querySelectorAll('.sidebar-menu-item');
+                menuItems.forEach(item => {
+                    const href = item.getAttribute('href');
+                    if (href && href !== '/logout') {
+                        if (currentPath === href || currentPath.startsWith(href + '/')) {
+                            item.classList.add('active');
+                        } else {
+                            item.classList.remove('active');
+                        }
+                    }
+                });
+            }
+            setActiveSidebarItem();
+        });
+    </script>
+</body>
+</html>
+

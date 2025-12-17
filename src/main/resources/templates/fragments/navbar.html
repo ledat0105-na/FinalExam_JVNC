@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<body>
+    <nav th:fragment="navbar" class="navbar navbar-expand-lg fixed-top transition-all"
+        th:classappend="${session.adminUsername != null ? 'navbar-admin' : (session.staffUsername != null ? 'navbar-staff' : 'navbar-customer')}">
+        <div class="container">
+            <!-- Brand -->
+            <a class="navbar-brand d-flex align-items-center gap-2"
+                th:href="${session.adminUsername != null ? '/admin/dashboard' : (session.staffUsername != null ? '/staff/dashboard' : (session.customerUsername != null ? '/customer/dashboard' : '/dashboard'))}">
+                <div class="brand-icon-box">
+                    <i class="bi bi-shield-check"></i>
+                </div>
+                <div class="d-flex flex-column">
+                    <span class="brand-text fw-bold">UCOP</span>
+                    <span class="brand-subtypo"
+                        style="font-size: 0.7rem; font-weight: 400; opacity: 0.8; letter-spacing: 1px;">PLATFORM</span>
+                </div>
+            </a>
+
+            <!-- Toggler -->
+            <button class="navbar-toggler border-0 shadow-none" type="button" data-bs-toggle="collapse"
+                data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false"
+                aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <!-- Navbar Content -->
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <!-- Left Nav: Main Links -->
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0 ms-lg-4 gap-1">
+                    <li class="nav-item">
+                        <a class="nav-link px-3 rounded-pill"
+                            th:href="${session.adminUsername != null ? '/admin/dashboard' : (session.staffUsername != null ? '/staff/dashboard' : (session.customerUsername != null ? '/customer/dashboard' : '/dashboard'))}"
+                            th:classappend="${#httpServletRequest != null and #httpServletRequest.requestURI.endsWith('dashboard') ? 'active' : ''}">
+                            <i class="bi bi-grid-fill me-1"></i> Dashboard
+                        </a>
+                    </li>
+
+                    <!-- Admin Links -->
+                    <th:block th:if="${session.adminUsername != null}">
+                        <li class="nav-item">
+                            <a class="nav-link px-3 rounded-pill" href="/admin/accounts"
+                                th:classappend="${#httpServletRequest != null and #strings.contains(#httpServletRequest.requestURI, '/admin/accounts') ? 'active' : ''}">
+                                <i class="bi bi-people-fill me-1"></i> Accounts
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link px-3 rounded-pill" href="/admin/items"
+                                th:classappend="${#httpServletRequest != null and #strings.contains(#httpServletRequest.requestURI, '/admin/items') ? 'active' : ''}">
+                                <i class="bi bi-box-seam-fill me-1"></i> Products
+                            </a>
+                        </li>
+                    </th:block>
+
+                    <!-- Staff Links -->
+                    <th:block th:if="${session.staffUsername != null}">
+                        <li class="nav-item">
+                            <a class="nav-link px-3 rounded-pill" href="/staff/orders"
+                                th:classappend="${#httpServletRequest != null and #strings.contains(#httpServletRequest.requestURI, '/staff/orders') ? 'active' : ''}">
+                                <i class="bi bi-receipt me-1"></i> Orders
+                            </a>
+                        </li>
+                    </th:block>
+
+                    <!-- Customer Links -->
+                    <th:block th:if="${session.customerUsername != null}">
+                        <li class="nav-item">
+                            <a class="nav-link px-3 rounded-pill" href="/customer/products"
+                                th:classappend="${#httpServletRequest != null and #strings.contains(#httpServletRequest.requestURI, '/customer/products') ? 'active' : ''}">
+                                <i class="bi bi-shop me-1"></i> Shop
+                            </a>
+                        </li>
+                    </th:block>
+                </ul>
+
+                <!-- Right Nav: User Menu -->
+                <ul class="navbar-nav align-items-center gap-2">
+                    <!-- Customer Cart Icon -->
+                    <li class="nav-item me-1" th:if="${session.customerUsername != null}">
+                        <a class="nav-link position-relative px-2" href="/customer/cart"
+                            th:classappend="${#httpServletRequest != null and #strings.contains(#httpServletRequest.requestURI, '/customer/cart') ? 'active text-warning' : ''}"
+                            title="Giỏ hàng">
+                            <i class="bi bi-cart-fill fs-5"></i>
+                            <span th:if="${navbarCartCount != null and navbarCartCount > 0}"
+                                class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                                style="font-size: 0.6rem; padding: 0.25em 0.5em;" th:text="${navbarCartCount}">
+                                0
+                            </span>
+                        </a>
+                    </li>
+
+                    <!-- Customer Notification Icon -->
+                    <li class="nav-item me-2" th:if="${session.customerUsername != null}">
+                        <a class="nav-link position-relative px-2" href="/customer/notifications"
+                            th:classappend="${#httpServletRequest != null and #strings.contains(#httpServletRequest.requestURI, '/customer/notifications') ? 'active text-primary' : ''}"
+                            title="Thông báo">
+                            <i class="bi bi-bell-fill fs-5"></i>
+                            <span th:if="${unreadNotificationCount != null and unreadNotificationCount > 0}"
+                                class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                                style="font-size: 0.6rem; padding: 0.25em 0.5em;" th:text="${unreadNotificationCount}">
+                                0
+                            </span>
+                        </a>
+                    </li>
+
+                    <!-- Not Logged In -->
+                    <th:block
+                        th:if="${session.adminUsername == null && session.staffUsername == null && session.customerUsername == null}">
+                        <li class="nav-item">
+                            <a class="nav-link fw-medium" href="/login">Đăng nhập</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="btn btn-light rounded-pill px-4 fw-bold text-primary shadow-sm"
+                                href="/register">Đăng ký</a>
+                        </li>
+                    </th:block>
+
+                    <!-- Logged In User Dropdown -->
+                    <li class="nav-item dropdown"
+                        th:if="${session.adminUsername != null || session.staffUsername != null || session.customerUsername != null}">
+                        <a class="nav-link dropdown-toggle d-flex align-items-center gap-2 py-1 px-2 rounded-pill bg-white bg-opacity-10 border border-white border-opacity-25"
+                            href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <div class="avatar-circle bg-white text-primary rounded-circle d-flex align-items-center justify-content-center"
+                                style="width: 32px; height: 32px;">
+                                <i class="bi bi-person-fill"></i>
+                            </div>
+                            <span class="text-white fw-medium pe-2"
+                                th:text="${session.adminUsername ?: (session.staffUsername ?: session.customerUsername)}">User</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 mt-2 p-2 rounded-3"
+                            aria-labelledby="userDropdown animate-slide-in">
+                            <li>
+                                <div class="px-3 py-2">
+                                    <p class="mb-0 text-muted small">Đang đăng nhập với vai trò</p>
+                                    <div class="fw-bold text-dark">
+                                        <span th:if="${session.adminUsername != null}"
+                                            class="badge bg-primary bg-opacity-10 text-primary">ADMINISTRATOR</span>
+                                        <span th:if="${session.staffUsername != null}"
+                                            class="badge bg-success bg-opacity-10 text-success">STAFF</span>
+                                        <span th:if="${session.customerUsername != null}"
+                                            class="badge bg-info bg-opacity-10 text-info">CUSTOMER</span>
+                                    </div>
+                                </div>
+                            </li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li th:if="${session.customerUsername != null}">
+                                <a class="dropdown-item rounded-2 py-2" href="/customer/profile">
+                                    <i class="bi bi-person-gear me-2 text-muted"></i> Hồ sơ cá nhân
+                                </a>
+                            </li>
+                            <li th:if="${session.customerUsername != null}">
+                                <a class="dropdown-item rounded-2 py-2" href="/customer/orders">
+                                    <i class="bi bi-box-seam me-2 text-muted"></i> Đơn hàng của tôi
+                                </a>
+                            </li>
+                            <li th:if="${session.adminUsername != null}">
+                                <a class="dropdown-item rounded-2 py-2" href="/admin/fees">
+                                    <i class="bi bi-sliders me-2 text-muted"></i> Cấu hình phí hệ thống
+                                </a>
+                            </li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li>
+                                <a class="dropdown-item rounded-2 py-2 text-danger fw-medium" href="/logout">
+                                    <i class="bi bi-box-arrow-right me-2"></i> Đăng xuất
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+</body>
+
+</html>

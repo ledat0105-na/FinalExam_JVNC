@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý sản phẩm | UCOP</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link th:href="@{/css/style.css}" rel="stylesheet">
+    <link th:href="@{/css/admin-layout.css}" rel="stylesheet">
+    <style>
+        .items-table {
+            font-size: 0.95rem;
+        }
+        .items-table thead th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+            color: white !important;
+            font-weight: 700 !important;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 0.5px;
+            border: none !important;
+            padding: 1rem 1.5rem;
+        }
+        .items-table tbody tr {
+            transition: all 0.2s ease;
+        }
+        .items-table tbody tr:hover {
+            background-color: #f8f9fa;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .items-table tbody td {
+            vertical-align: middle;
+            border-color: #e9ecef;
+            padding: 1rem 1.5rem;
+        }
+        .product-image {
+            width: 60px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 2px solid #e9ecef;
+        }
+        .product-image-placeholder {
+            width: 60px;
+            height: 60px;
+            background: #f8f9fa;
+            border: 2px dashed #dee2e6;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #6c757d;
+            font-size: 0.75rem;
+        }
+        .category-badge {
+            font-size: 0.75rem;
+            padding: 0.35rem 0.7rem;
+            border-radius: 15px;
+            white-space: nowrap;
+            display: inline-block;
+        }
+        .type-badge {
+            font-size: 0.75rem;
+            padding: 0.35rem 0.7rem;
+            border-radius: 15px;
+            white-space: nowrap;
+            display: inline-block;
+        }
+        .status-badge {
+            font-size: 0.75rem;
+            padding: 0.35rem 0.7rem;
+            border-radius: 15px;
+            white-space: nowrap;
+            display: inline-block;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: #6c757d;
+        }
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+        .more-btn {
+            cursor: pointer;
+        }
+        /* Fix modal hiển thị ở giữa màn hình */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1055;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.5);
+        }
+        .modal.show {
+            display: flex !important;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal.fade .modal-dialog {
+            transition: transform 0.3s ease-out;
+            transform: translate(0, -50px);
+        }
+        .modal.show .modal-dialog {
+            transform: translate(0, 0);
+        }
+        .modal-dialog-centered {
+            display: flex;
+            align-items: center;
+            min-height: calc(100% - 1rem);
+            margin: 1rem auto;
+        }
+        .modal-dialog {
+            margin: auto;
+            position: relative;
+            width: auto;
+            max-width: 500px;
+            pointer-events: none;
+        }
+        .modal-content {
+            pointer-events: auto;
+        }
+    </style>
+</head>
+
+<body class="admin-dashboard">
+    <div th:replace="~{fragments/admin-sidebar :: admin-sidebar}"></div>
+    
+    <main class="admin-main-content" id="mainContent">
+        <div th:replace="~{fragments/admin-header :: admin-header('Quản lý sản phẩm')}"></div>
+        
+        <div class="dashboard-content">
+            <div class="container-fluid">
+                <div th:if="${success}" class="alert alert-success alert-dismissible fade show border-0 shadow-sm" role="alert" style="z-index: 1; position: relative;">
+                    <i class="bi bi-check-circle me-2"></i><span th:text="${success}"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                <div th:if="${error}" class="alert alert-danger alert-dismissible fade show border-0 shadow-sm" role="alert" style="z-index: 1; position: relative;">
+                    <i class="bi bi-exclamation-triangle me-2"></i><span th:text="${error}"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+
+                <div class="d-flex justify-content-end align-items-center flex-wrap gap-2 mb-4">
+                    <a href="javascript:history.back();" class="btn btn-outline-secondary fw-bold shadow-sm">
+                        <i class="bi bi-arrow-left me-2"></i>Quay lại
+                    </a>
+                    <a href="/admin/items/import" class="btn btn-success fw-bold shadow-sm">
+                        <i class="bi bi-upload me-2"></i>Import CSV
+                    </a>
+                    <a href="/admin/items/export" class="btn btn-info fw-bold shadow-sm">
+                        <i class="bi bi-download me-2"></i>Export CSV
+                    </a>
+                    <a href="/admin/items/new" class="btn btn-primary fw-bold shadow-sm">
+                        <i class="bi bi-plus-lg me-2"></i>Thêm mới
+                    </a>
+                </div>
+
+                <!-- Filter và Tìm kiếm -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body">
+                        <form method="get" action="/admin/items" id="searchForm" class="row g-3">
+                            <div class="col-md-4">
+                                <label for="keyword" class="form-label fw-bold">Tìm kiếm:</label>
+                                <input type="text" class="form-control" id="keyword" name="keyword" 
+                                       placeholder="Tên sản phẩm, SKU..." 
+                                       th:value="${selectedKeyword}">
+                            </div>
+                            <div class="col-md-3">
+                                <label for="categoryId" class="form-label fw-bold">Danh mục:</label>
+                                <select class="form-select" id="categoryId" name="categoryId">
+                                    <option value="">Tất cả danh mục</option>
+                                    <option th:each="category : ${categories}" 
+                                            th:value="${category.categoryId}" 
+                                            th:text="${category.categoryName}"
+                                            th:selected="${selectedCategoryId != null and selectedCategoryId == category.categoryId}">
+                                    </option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="status" class="form-label fw-bold">Trạng thái:</label>
+                                <select class="form-select" id="status" name="status">
+                                    <option value="">Tất cả</option>
+                                    <option value="active" th:selected="${selectedStatus == 'active'}">Hoạt động</option>
+                                    <option value="inactive" th:selected="${selectedStatus == 'inactive'}">Không hoạt động</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2 d-flex align-items-end gap-2">
+                                <button type="submit" class="btn btn-primary w-100">
+                                    <i class="bi bi-search me-2"></i>Tìm
+                                </button>
+                            </div>
+                            <div class="col-12">
+                                <a href="/admin/items" class="btn btn-outline-secondary btn-sm">
+                                    <i class="bi bi-x-circle me-2"></i>Xóa bộ lọc
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="card shadow-sm border-0">
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0 align-middle items-table">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Hình ảnh</th>
+                                        <th>SKU</th>
+                                        <th>Tên sản phẩm</th>
+                                        <th>Danh mục</th>
+                                        <th>Đơn giá</th>
+                                        <th>Trạng thái</th>
+                                        <th class="text-end">Thao tác</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:if="${#lists.isEmpty(items)}">
+                                        <td colspan="8" class="empty-state">
+                                            <i class="bi bi-inbox"></i>
+                                            <div>Chưa có sản phẩm nào</div>
+                                        </td>
+                                    </tr>
+                                    <tr th:each="item : ${items}">
+                                        <td class="fw-bold text-muted" th:text="'#' + ${item.itemId}"></td>
+                                        <td>
+                                            <img th:if="${item.hasImage != null and item.hasImage}"
+                                                th:src="@{/admin/items/{id}/image(id=${item.itemId})}" 
+                                                alt="Product" class="product-image" />
+                                            <div th:unless="${item.hasImage != null and item.hasImage}"
+                                                class="product-image-placeholder">
+                                                <i class="bi bi-image"></i>
+                                            </div>
+                                        </td>
+                                        <td class="fw-bold" th:text="${item.sku}"></td>
+                                        <td>
+                                            <div class="fw-semibold" th:text="${item.itemName}"></div>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-info category-badge" th:text="${item.categoryName}"></span>
+                                        </td>
+                                        <td>
+                                            <span class="fw-bold text-primary" 
+                                                th:text="${#numbers.formatDecimal(item.unitPrice, 0, 'COMMA', 0, 'POINT')} + ' đ'">
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span th:if="${item.isActive}" class="badge bg-success status-badge">
+                                                <i class="bi bi-check-circle-fill me-1"></i>Hoạt động
+                                            </span>
+                                            <span th:unless="${item.isActive}" class="badge bg-danger status-badge">
+                                                <i class="bi bi-x-circle-fill me-1"></i>Không hoạt động
+                                            </span>
+                                        </td>
+                                        <td class="text-end">
+                                            <button class="btn btn-sm btn-outline-secondary more-btn" type="button" 
+                                                    th:attr="data-item-id=${item.itemId}, data-item-name=${item.itemName}, data-item-sku=${item.sku}"
+                                                    data-bs-toggle="modal" 
+                                                    data-bs-target="#itemActionModal">
+                                                <i class="bi bi-three-dots-vertical"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal Thao tác sản phẩm -->
+    <div class="modal fade" id="itemActionModal" tabindex="-1" aria-labelledby="itemActionModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold" id="itemActionModalLabel">
+                        <i class="bi bi-three-dots-vertical me-2"></i>Thao tác sản phẩm
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <div class="text-muted small mb-1">Sản phẩm:</div>
+                        <div class="fw-bold" id="modalItemName"></div>
+                        <div class="text-muted small" id="modalItemSku"></div>
+                    </div>
+                    <hr>
+                    <div class="d-grid gap-2">
+                        <a id="modalViewDetail" class="btn btn-outline-primary" href="#">
+                            <i class="bi bi-eye me-2"></i>Xem chi tiết
+                        </a>
+                        <a id="modalEdit" class="btn btn-outline-secondary" href="#">
+                            <i class="bi bi-pencil me-2"></i>Sửa sản phẩm
+                        </a>
+                        <form id="modalDeleteForm" method="post" class="d-inline">
+                            <button type="submit" class="btn btn-outline-danger w-100" 
+                                    onclick="return confirm('Bạn có chắc chắn muốn xóa sản phẩm này?');">
+                                <i class="bi bi-trash me-2"></i>Xóa sản phẩm
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script th:src="@{/js/admin-layout.js}"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Xử lý submit form khi thay đổi dropdown
+            const categorySelect = document.getElementById('categoryId');
+            const statusSelect = document.getElementById('status');
+            const searchForm = document.getElementById('searchForm');
+            
+            if (categorySelect && searchForm) {
+                categorySelect.addEventListener('change', function() {
+                    searchForm.submit();
+                });
+            }
+            
+            if (statusSelect && searchForm) {
+                statusSelect.addEventListener('change', function() {
+                    searchForm.submit();
+                });
+            }
+            
+            const itemActionModal = document.getElementById('itemActionModal');
+            const modalItemName = document.getElementById('modalItemName');
+            const modalItemSku = document.getElementById('modalItemSku');
+            const modalViewDetail = document.getElementById('modalViewDetail');
+            const modalEdit = document.getElementById('modalEdit');
+            const modalDeleteForm = document.getElementById('modalDeleteForm');
+            
+            // Xử lý khi modal được mở
+            if (itemActionModal) {
+                itemActionModal.addEventListener('show.bs.modal', function(event) {
+                    // Lấy button đã trigger modal
+                    const button = event.relatedTarget;
+                    
+                    // Lấy thông tin từ data attributes
+                    const itemId = button.getAttribute('data-item-id');
+                    const itemName = button.getAttribute('data-item-name');
+                    const itemSku = button.getAttribute('data-item-sku');
+                    
+                    // Cập nhật thông tin trong modal
+                    modalItemName.textContent = itemName;
+                    modalItemSku.textContent = 'SKU: ' + itemSku;
+                    
+                    // Cập nhật các link với itemId tương ứng
+                    modalViewDetail.href = '/admin/items/' + itemId;
+                    modalEdit.href = '/admin/items/' + itemId + '/edit';
+                    modalDeleteForm.action = '/admin/items/' + itemId + '/delete';
+                });
+            }
+        });
+    </script>
+</body>
+</html>

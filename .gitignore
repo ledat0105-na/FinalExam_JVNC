@@ -15,4 +15,8 @@
 /.project
 /.settings/
 .vscode/
-.settings/
+/.settings/
+
+# Uploaded files
+uploads/**
+!uploads/.gitkeep

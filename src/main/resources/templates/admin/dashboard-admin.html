@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | UCOP</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link th:href="@{/css/style.css}" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    
+    <style>
+        :root {
+            --sidebar-width: 260px;
+            --sidebar-collapsed-width: 80px;
+            --header-height: 70px;
+        }
+
+        body.admin-dashboard {
+            padding-top: 0 !important;
+            margin: 0 !important;
+            overflow-x: hidden;
+            width: 100% !important;
+            box-sizing: border-box;
+            position: relative;
+        }
+        
+        /* Override any styles from style.css */
+        body.admin-dashboard::before {
+            display: none !important;
+        }
+        
+        body.admin-dashboard > .admin-sidebar,
+        body.admin-dashboard > .admin-main-content {
+            position: relative !important;
+            z-index: auto !important;
+            min-height: auto !important;
+        }
+        
+        body.admin-dashboard > .admin-sidebar {
+            position: fixed !important;
+            z-index: 1000 !important;
+        }
+        
+        body.admin-dashboard > .admin-main-content {
+            position: relative !important;
+            z-index: 1 !important;
+        }
+        
+        html {
+            box-sizing: border-box;
+            overflow-x: hidden;
+        }
+        
+        *, *::before, *::after {
+            box-sizing: inherit;
+        }
+
+        /* Sidebar Styles */
+        .admin-sidebar {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            height: 100vh !important;
+            width: var(--sidebar-width) !important;
+            background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+            color: white;
+            transition: all 0.3s ease;
+            z-index: 1000;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        .admin-sidebar.collapsed {
+            width: var(--sidebar-collapsed-width);
+        }
+
+        .sidebar-header {
+            padding: 1.5rem 1.25rem;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-height: var(--header-height);
+        }
+
+        .sidebar-logo {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            flex-shrink: 0;
+        }
+
+        .sidebar-brand {
+            font-weight: 700;
+            font-size: 1.25rem;
+            white-space: nowrap;
+            overflow: hidden;
+            transition: opacity 0.3s;
+        }
+
+        .admin-sidebar.collapsed .sidebar-brand {
+            opacity: 0;
+            width: 0;
+        }
+
+        .sidebar-toggle {
+            margin-left: auto;
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: white;
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .sidebar-toggle:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .sidebar-menu {
+            padding: 1rem 0;
+        }
+
+        .sidebar-menu-item {
+            padding: 0.75rem 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: rgba(255,255,255,0.7);
+            text-decoration: none;
+            transition: all 0.2s;
+            border-left: 3px solid transparent;
+            white-space: nowrap;
+        }
+
+        .sidebar-menu-item:hover {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-left-color: #4f46e5;
+        }
+
+        .sidebar-menu-item.active {
+            background: rgba(79, 70, 229, 0.2);
+            color: white;
+            border-left-color: #4f46e5;
+        }
+
+        .sidebar-menu-item i {
+            width: 24px;
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+
+        .sidebar-menu-item span {
+            transition: opacity 0.3s;
+        }
+
+        .admin-sidebar.collapsed .sidebar-menu-item span {
+            opacity: 0;
+            width: 0;
+        }
+
+        /* Main Content Area */
+        .admin-main-content {
+            margin-left: var(--sidebar-width) !important;
+            transition: margin-left 0.3s ease, width 0.3s ease;
+            min-height: 100vh;
+            background: #f1f5f9;
+            width: calc(100% - var(--sidebar-width)) !important;
+            max-width: calc(100% - var(--sidebar-width)) !important;
+            position: relative !important;
+            box-sizing: border-box;
+            float: none !important;
+            clear: both !important;
+            left: 0 !important;
+            right: auto !important;
+        }
+
+        .admin-main-content.sidebar-collapsed {
+            margin-left: var(--sidebar-collapsed-width) !important;
+            width: calc(100% - var(--sidebar-collapsed-width)) !important;
+            max-width: calc(100% - var(--sidebar-collapsed-width)) !important;
+        }
+
+        .admin-header {
+            background: white;
+            height: var(--header-height);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .admin-header-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #0f172a;
+            margin: 0;
+        }
+
+        .admin-header-right {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .admin-user-info {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .admin-user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+        }
+
+        /* Dashboard Content */
+        .dashboard-content {
+            padding: 2rem;
+            width: 100%;
+            box-sizing: border-box;
+            position: relative;
+        }
+
+        /* Stat Cards */
+        .stat-card-modern {
+            background: white;
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            transition: all 0.3s;
+            border-left: 4px solid;
+            height: 100%;
+        }
+
+        .stat-card-modern:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+
+        .stat-card-modern.primary { border-left-color: #4f46e5; }
+        .stat-card-modern.success { border-left-color: #10b981; }
+        .stat-card-modern.warning { border-left-color: #f59e0b; }
+        .stat-card-modern.danger { border-left-color: #ef4444; }
+        .stat-card-modern.info { border-left-color: #3b82f6; }
+        .stat-card-modern.purple { border-left-color: #8b5cf6; }
+
+        .stat-icon-modern {
+            width: 56px;
+            height: 56px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .stat-card-modern.primary .stat-icon-modern { background: #eef2ff; color: #4f46e5; }
+        .stat-card-modern.success .stat-icon-modern { background: #d1fae5; color: #10b981; }
+        .stat-card-modern.warning .stat-icon-modern { background: #fef3c7; color: #f59e0b; }
+        .stat-card-modern.danger .stat-icon-modern { background: #fee2e2; color: #ef4444; }
+        .stat-card-modern.info .stat-icon-modern { background: #dbeafe; color: #3b82f6; }
+        .stat-card-modern.purple .stat-icon-modern { background: #ede9fe; color: #8b5cf6; }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #0f172a;
+            margin: 0.5rem 0;
+        }
+
+        .stat-label {
+            font-size: 0.875rem;
+            color: #64748b;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Chart Cards */
+        .chart-card {
+            background: white;
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+
+        .chart-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .chart-card-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #0f172a;
+            margin: 0;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .admin-sidebar {
+                transform: translateX(-100%);
+            }
+            .admin-sidebar.show {
+                transform: translateX(0);
+            }
+            .admin-main-content {
+                margin-left: 0 !important;
+                width: 100% !important;
+            }
+        }
+        
+        /* Ensure charts are properly positioned */
+        .dashboard-content .row.g-4 {
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+            width: 100%;
+        }
+        
+        .dashboard-content .row.g-4 > * {
+            padding-left: 0.75rem;
+            padding-right: 0.75rem;
+        }
+        
+        /* Override any container styles */
+        .dashboard-content .container,
+        .dashboard-content .container-fluid {
+            max-width: 100% !important;
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+        }
+
+        /* Scrollbar */
+        .admin-sidebar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .admin-sidebar::-webkit-scrollbar-track {
+            background: rgba(255,255,255,0.1);
+        }
+        .admin-sidebar::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.3);
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body class="admin-dashboard">
+    <!-- Sidebar -->
+    <aside class="admin-sidebar" id="adminSidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo">
+                <i class="bi bi-shield-check"></i>
+            </div>
+            <div class="sidebar-brand">UCOP Admin</div>
+            <button class="sidebar-toggle" onclick="toggleSidebar()">
+                <i class="bi bi-list"></i>
+            </button>
+        </div>
+        <nav class="sidebar-menu">
+            <a href="/admin/dashboard" class="sidebar-menu-item active">
+                <i class="bi bi-speedometer2"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="/admin/accounts" class="sidebar-menu-item">
+                <i class="bi bi-people"></i>
+                <span>Tài khoản</span>
+            </a>
+            <a href="/admin/items" class="sidebar-menu-item">
+                <i class="bi bi-box-seam"></i>
+                <span>Sản phẩm</span>
+            </a>
+            <a href="/admin/categories" class="sidebar-menu-item">
+                <i class="bi bi-tags"></i>
+                <span>Danh mục</span>
+            </a>
+            <a href="/admin/orders" class="sidebar-menu-item">
+                <i class="bi bi-cart-check"></i>
+                <span>Đơn hàng</span>
+            </a>
+            <a href="/admin/shipments" class="sidebar-menu-item">
+                <i class="bi bi-truck"></i>
+                <span>Vận đơn</span>
+            </a>
+            <a href="/admin/refunds" class="sidebar-menu-item">
+                <i class="bi bi-arrow-counterclockwise"></i>
+                <span>Hoàn tiền</span>
+            </a>
+            <a href="/admin/promotions" class="sidebar-menu-item">
+                <i class="bi bi-ticket-perforated"></i>
+                <span>Khuyến mãi</span>
+            </a>
+            <a href="/admin/warehouses" class="sidebar-menu-item">
+                <i class="bi bi-building"></i>
+                <span>Kho hàng</span>
+            </a>
+            <a href="/admin/stock/low-stock" class="sidebar-menu-item">
+                <i class="bi bi-exclamation-triangle"></i>
+                <span>Cảnh báo tồn kho</span>
+            </a>
+            <a href="/admin/revenue-report" class="sidebar-menu-item">
+                <i class="bi bi-graph-up-arrow"></i>
+                <span>Báo cáo doanh thu</span>
+            </a>
+            <a href="/admin/audit-log" class="sidebar-menu-item">
+                <i class="bi bi-file-earmark-bar-graph"></i>
+                <span>Audit Log</span>
+            </a>
+            <a href="/admin/fees" class="sidebar-menu-item">
+                <i class="bi bi-cash-coin"></i>
+                <span>Cấu hình phí</span>
+            </a>
+            <a href="/logout" class="sidebar-menu-item">
+                <i class="bi bi-box-arrow-right"></i>
+                <span>Đăng xuất</span>
+            </a>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="admin-main-content" id="mainContent">
+        <!-- Header -->
+        <header class="admin-header">
+            <h1 class="admin-header-title">Tổng quan Quản trị</h1>
+            <div class="admin-header-right">
+                <div class="text-end">
+                    <div class="h5 mb-0"><i class="bi bi-clock"></i> <span id="clock">00:00</span></div>
+                    <small class="text-muted" id="date">Thứ Hai, 20/11/2023</small>
+                </div>
+                <div class="admin-user-info">
+                    <div class="admin-user-avatar">
+                        <i class="bi bi-person-fill"></i>
+                    </div>
+                    <div>
+                        <div class="fw-bold" th:text="${adminUsername}">Admin</div>
+                        <small class="text-muted">Quản trị viên</small>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Dashboard Content -->
+        <div class="dashboard-content">
+            <!-- Alerts -->
+            <div th:if="${success}" class="alert alert-success d-flex align-items-center mb-4" role="alert">
+                <i class="bi bi-check-circle-fill me-2 fs-5"></i>
+                <div th:text="${success}"></div>
+                <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"></button>
+            </div>
+            <div th:if="${error}" class="alert alert-danger d-flex align-items-center mb-4" role="alert">
+                <i class="bi bi-exclamation-triangle-fill me-2 fs-5"></i>
+                <div th:text="${error}"></div>
+                <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"></button>
+            </div>
+
+            <!-- Statistics Cards -->
+            <div class="row g-4 mb-4">
+                <div class="col-xl-3 col-md-6">
+                    <div class="stat-card-modern primary">
+                        <div class="stat-icon-modern">
+                            <i class="bi bi-people-fill"></i>
+                        </div>
+                        <div class="stat-label">Tổng người dùng</div>
+                        <div class="stat-value" th:text="${#numbers.formatInteger(totalUsers, 0, 'COMMA')}">0</div>
+                    </div>
+                </div>
+                <div class="col-xl-3 col-md-6">
+                    <div class="stat-card-modern success">
+                        <div class="stat-icon-modern">
+                            <i class="bi bi-cart-check"></i>
+                        </div>
+                        <div class="stat-label">Tổng đơn hàng</div>
+                        <div class="stat-value" th:text="${#numbers.formatInteger(totalOrders, 0, 'COMMA')}">0</div>
+                    </div>
+                </div>
+                <div class="col-xl-3 col-md-6">
+                    <div class="stat-card-modern info">
+                        <div class="stat-icon-modern">
+                            <i class="bi bi-currency-dollar"></i>
+                        </div>
+                        <div class="stat-label">Doanh thu tháng này</div>
+                        <div class="stat-value" th:text="${#numbers.formatDecimal(totalRevenue, 0, 'COMMA', 0, 'POINT')}">0</div>
+                        <small class="text-muted">VNĐ</small>
+                    </div>
+                </div>
+                <div class="col-xl-3 col-md-6">
+                    <div class="stat-card-modern purple">
+                        <div class="stat-icon-modern">
+                            <i class="bi bi-box-seam"></i>
+                        </div>
+                        <div class="stat-label">Tổng sản phẩm</div>
+                        <div class="stat-value" th:text="${#numbers.formatInteger(totalItems, 0, 'COMMA')}">0</div>
+                    </div>
+                </div>
+                <div class="col-xl-3 col-md-6">
+                    <div class="stat-card-modern warning">
+                        <div class="stat-icon-modern">
+                            <i class="bi bi-exclamation-triangle-fill"></i>
+                        </div>
+                        <div class="stat-label">Cảnh báo tồn kho</div>
+                        <div class="stat-value" th:text="${lowStockAlerts}">0</div>
+                    </div>
+                </div>
+                <div class="col-xl-3 col-md-6">
+                    <div class="stat-card-modern danger">
+                        <div class="stat-icon-modern">
+                            <i class="bi bi-shield-exclamation"></i>
+                        </div>
+                        <div class="stat-label">Cần duyệt</div>
+                        <div class="stat-value" th:text="${pendingApprovals}">0</div>
+                    </div>
+                </div>
+                <div class="col-xl-3 col-md-6">
+                    <div class="stat-card-modern success">
+                        <div class="stat-icon-modern">
+                            <i class="bi bi-tags"></i>
+                        </div>
+                        <div class="stat-label">Danh mục</div>
+                        <div class="stat-value" th:text="${totalCategories}">0</div>
+                    </div>
+                </div>
+                <div class="col-xl-3 col-md-6">
+                    <div class="stat-card-modern info">
+                        <div class="stat-icon-modern">
+                            <i class="bi bi-activity"></i>
+                        </div>
+                        <div class="stat-label">Truy cập hôm nay</div>
+                        <div class="stat-value" th:text="${todayAccess}">0</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Section -->
+            <div class="row g-4">
+                <div class="col-lg-8">
+                    <div class="chart-card">
+                        <div class="chart-card-header">
+                            <h3 class="chart-card-title">Doanh thu 7 ngày qua</h3>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="revenueChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4">
+                    <div class="chart-card">
+                        <div class="chart-card-header">
+                            <h3 class="chart-card-title">Trạng thái đơn hàng</h3>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="orderStatusChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="chart-card">
+                        <div class="chart-card-header">
+                            <h3 class="chart-card-title">Phân bố người dùng</h3>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="userDistributionChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="chart-card">
+                        <div class="chart-card-header">
+                            <h3 class="chart-card-title">Hoạt động theo giờ</h3>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="activityChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Sidebar Toggle
+        function toggleSidebar() {
+            const sidebar = document.getElementById('adminSidebar');
+            const mainContent = document.getElementById('mainContent');
+            sidebar.classList.toggle('collapsed');
+            mainContent.classList.toggle('sidebar-collapsed');
+        }
+
+        // Update Time
+        function updateTime() {
+            const now = new Date();
+            document.getElementById('clock').innerText = now.toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit'});
+            document.getElementById('date').innerText = now.toLocaleDateString('vi-VN', {weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'});
+        }
+        setInterval(updateTime, 1000);
+        updateTime();
+
+        // Charts
+        const ctx1 = document.getElementById('revenueChart');
+        const revenueChart = new Chart(ctx1, {
+            type: 'line',
+            data: {
+                labels: ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'],
+                datasets: [{
+                    label: 'Doanh thu (VNĐ)',
+                    data: [1200000, 1900000, 1500000, 2100000, 1800000, 2500000, 2200000],
+                    borderColor: '#4f46e5',
+                    backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return (value / 1000000).toFixed(1) + 'M';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        const ctx2 = document.getElementById('orderStatusChart');
+        const orderStatusChart = new Chart(ctx2, {
+            type: 'doughnut',
+            data: {
+                labels: ['Hoàn thành', 'Đang xử lý', 'Đang giao', 'Đã hủy'],
+                datasets: [{
+                    data: [65, 20, 10, 5],
+                    backgroundColor: [
+                        '#10b981',
+                        '#3b82f6',
+                        '#f59e0b',
+                        '#ef4444'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+
+        const ctx3 = document.getElementById('userDistributionChart');
+        const userDistributionChart = new Chart(ctx3, {
+            type: 'bar',
+            data: {
+                labels: ['Admin', 'Staff', 'Customer'],
+                datasets: [{
+                    label: 'Số lượng',
+                    data: [5, 15, 120],
+                    backgroundColor: [
+                        '#4f46e5',
+                        '#10b981',
+                        '#3b82f6'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        const ctx4 = document.getElementById('activityChart');
+        const activityChart = new Chart(ctx4, {
+            type: 'bar',
+            data: {
+                labels: ['0h', '4h', '8h', '12h', '16h', '20h'],
+                datasets: [{
+                    label: 'Số lượt truy cập',
+                    data: [5, 8, 25, 45, 35, 20],
+                    backgroundColor: '#8b5cf6'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

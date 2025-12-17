@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phân quyền | UCOP</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link th:href="@{/css/style.css}" rel="stylesheet">
+    <style>
+        :root {
+            --sidebar-width: 260px;
+            --sidebar-collapsed-width: 80px;
+            --header-height: 70px;
+        }
+
+        body.admin-dashboard {
+            padding-top: 0 !important;
+            margin: 0 !important;
+            overflow-x: hidden;
+            width: 100% !important;
+            box-sizing: border-box;
+            position: relative;
+        }
+        
+        body.admin-dashboard::before {
+            display: none !important;
+        }
+        
+        body.admin-dashboard > .admin-sidebar,
+        body.admin-dashboard > .admin-main-content {
+            position: relative !important;
+            z-index: auto !important;
+            min-height: auto !important;
+        }
+        
+        body.admin-dashboard > .admin-sidebar {
+            position: fixed !important;
+            z-index: 1000 !important;
+        }
+        
+        body.admin-dashboard > .admin-main-content {
+            position: relative !important;
+            z-index: 1 !important;
+        }
+
+        .admin-sidebar {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            height: 100vh !important;
+            width: var(--sidebar-width) !important;
+            background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+            color: white;
+            transition: all 0.3s ease;
+            z-index: 1000;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        .admin-sidebar.collapsed {
+            width: var(--sidebar-collapsed-width);
+        }
+
+        .sidebar-header {
+            padding: 1.5rem 1.25rem;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-height: var(--header-height);
+        }
+
+        .sidebar-logo {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            flex-shrink: 0;
+        }
+
+        .sidebar-brand {
+            font-weight: 700;
+            font-size: 1.1rem;
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+        }
+
+        .admin-sidebar.collapsed .sidebar-brand {
+            display: none;
+        }
+
+        .sidebar-toggle {
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: white;
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .sidebar-toggle:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .sidebar-menu {
+            padding: 1rem 0;
+        }
+
+        .sidebar-menu-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 0.75rem 1.25rem;
+            color: rgba(255,255,255,0.7);
+            text-decoration: none;
+            transition: all 0.2s;
+            border-left: 3px solid transparent;
+        }
+
+        .sidebar-menu-item:hover {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-left-color: #6366f1;
+        }
+
+        .sidebar-menu-item.active {
+            background: rgba(99, 102, 241, 0.2);
+            color: white;
+            border-left-color: #6366f1;
+        }
+
+        .sidebar-menu-item i {
+            font-size: 1.2rem;
+            width: 24px;
+            text-align: center;
+        }
+
+        .admin-main-content {
+            margin-left: var(--sidebar-width);
+            width: calc(100% - var(--sidebar-width));
+            min-height: 100vh;
+            background: #f8fafc;
+            transition: all 0.3s ease;
+        }
+
+        .admin-sidebar.collapsed ~ .admin-main-content {
+            margin-left: var(--sidebar-collapsed-width);
+            width: calc(100% - var(--sidebar-collapsed-width));
+        }
+
+        .admin-header {
+            background: white;
+            height: var(--header-height);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .admin-header-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #0f172a;
+            margin: 0;
+        }
+
+        .admin-header-right {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .admin-user-info {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .admin-user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+        }
+
+        .dashboard-content {
+            padding: 2rem;
+            width: 100%;
+            box-sizing: border-box;
+            position: relative;
+        }
+
+        @media (max-width: 768px) {
+            .admin-sidebar {
+                transform: translateX(-100%);
+            }
+            .admin-sidebar.show {
+                transform: translateX(0);
+            }
+            .admin-main-content {
+                margin-left: 0 !important;
+                width: 100% !important;
+            }
+        }
+    </style>
+</head>
+<body class="admin-dashboard">
+    <div th:replace="~{fragments/admin-sidebar :: admin-sidebar}"></div>
+    
+    <main class="admin-main-content" id="mainContent">
+        <div class="dashboard-content">
+<div class="container-fluid">
+    <div class="d-flex justify-content-end align-items-center flex-wrap gap-2 mb-4">
+        <a href="/admin/accounts" class="btn btn-outline-secondary fw-bold shadow-sm">
+            <i class="bi bi-arrow-left me-2"></i>Quay lại
+        </a>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white border-bottom p-4">
+                    <h4 class="fw-bold mb-1 text-dark">
+                        <i class="bi bi-person-gear me-2 text-primary"></i>Thiết lập vai trò
+                    </h4>
+                    <p class="text-muted small mb-0">Chọn một hoặc nhiều vai trò cho tài khoản <strong th:text="${account.username}">User</strong></p>
+                </div>
+                <div class="card-body p-4">
+                    <form th:action="@{/admin/accounts/{id}/roles(id=${account.accountId})}" method="post">
+                        <label class="form-label fw-bold mb-4 fs-5">Chọn vai trò:</label>
+
+                        <div class="role-option mb-3 p-3 rounded border" style="background: #fff5f5; border-color: #fecaca !important;">
+                            <div class="form-check d-flex align-items-center">
+                                <input class="form-check-input me-3" type="checkbox" name="roleCodes" value="ADMIN" id="roleAdmin" th:checked="${account.roleCodes.contains('ADMIN')}" style="width: 20px; height: 20px; cursor: pointer;">
+                                <label class="form-check-label flex-grow-1" for="roleAdmin" style="cursor: pointer;">
+                                    <span class="badge bg-danger px-3 py-2 me-3 fw-bold">ADMIN</span>
+                                    <span class="text-dark fw-semibold">Quản trị viên (Toàn quyền hệ thống)</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="role-option mb-3 p-3 rounded border" style="background: #fffbeb; border-color: #fed7aa !important;">
+                            <div class="form-check d-flex align-items-center">
+                                <input class="form-check-input me-3" type="checkbox" name="roleCodes" value="STAFF" id="roleStaff" th:checked="${account.roleCodes.contains('STAFF')}" style="width: 20px; height: 20px; cursor: pointer;">
+                                <label class="form-check-label flex-grow-1" for="roleStaff" style="cursor: pointer;">
+                                    <span class="badge bg-warning px-3 py-2 me-3 fw-bold">STAFF</span>
+                                    <span class="text-dark fw-semibold">Nhân viên (Quyền vận hành, hạn chế)</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="role-option mb-4 p-3 rounded border" style="background: #eff6ff; border-color: #bfdbfe !important;">
+                            <div class="form-check d-flex align-items-center">
+                                <input class="form-check-input me-3" type="checkbox" name="roleCodes" value="CUSTOMER" id="roleCustomer" th:checked="${account.roleCodes.contains('CUSTOMER')}" style="width: 20px; height: 20px; cursor: pointer;">
+                                <label class="form-check-label flex-grow-1" for="roleCustomer" style="cursor: pointer;">
+                                    <span class="badge bg-info px-3 py-2 me-3 fw-bold">CUSTOMER</span>
+                                    <span class="text-dark fw-semibold">Khách hàng (Quyền xem cơ bản)</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between gap-3 pt-3 border-top">
+                            <a href="javascript:history.back();" class="btn btn-outline-secondary fw-bold px-4">
+                                <i class="bi bi-x-circle me-2"></i>Hủy bỏ
+                            </a>
+                            <button type="submit" class="btn btn-primary fw-bold px-5 shadow-sm">
+                                <i class="bi bi-check-circle me-2"></i>Lưu thay đổi
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+        </div>
+    </main>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function toggleSidebar() {
+            const sidebar = document.getElementById('adminSidebar');
+            sidebar.classList.toggle('collapsed');
+        }
+        
+        function updateClock() {
+            const now = new Date();
+            const time = now.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+            const date = now.toLocaleDateString('vi-VN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+            const clockEl = document.getElementById('clock');
+            const dateEl = document.getElementById('date');
+            if (clockEl) clockEl.textContent = time;
+            if (dateEl) dateEl.textContent = date;
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+    </script>
+</body>
+</html>
+
