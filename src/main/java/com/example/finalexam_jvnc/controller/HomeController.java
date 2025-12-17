@@ -44,8 +44,8 @@ public class HomeController {
             return "redirect:/customer/dashboard";
         }
         
-        // Redirect to login if not logged in
-        return "redirect:/login";
+        // Show public dashboard with Login / Register buttons if not logged in
+        return "dashboard";
     }
 
 }

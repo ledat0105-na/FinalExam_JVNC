@@ -25,5 +25,8 @@ public interface AccountService {
     com.example.finalexam_jvnc.dto.AccountProfileDTO getProfile(String username);
     void updateProfile(String username, com.example.finalexam_jvnc.dto.AccountProfileDTO profileDTO);
     void changePassword(String username, String currentPassword, String newPassword);
+    
+    // Get account by username
+    com.example.finalexam_jvnc.model.Account getAccountByUsername(String username);
 }
 

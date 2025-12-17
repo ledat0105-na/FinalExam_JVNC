@@ -22,5 +22,6 @@ public class AccountDTO {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private Set<String> roleCodes;
+    private Double walletBalance;
 }
 

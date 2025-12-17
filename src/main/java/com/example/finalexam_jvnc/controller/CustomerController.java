@@ -1,12 +1,18 @@
 package com.example.finalexam_jvnc.controller;
 
+import com.example.finalexam_jvnc.repository.ItemRepository;
 import com.example.finalexam_jvnc.service.AccountService;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 @Controller
 @RequestMapping("/customer")
@@ -27,14 +33,69 @@ public class CustomerController {
     @Autowired
     private com.example.finalexam_jvnc.service.OrderService orderService;
 
-    // Customer Dashboard - yêu cầu đăng nhập
+    @Autowired
+    private ItemRepository itemRepository;
+
     @GetMapping("/dashboard")
     public String dashboard(HttpSession session, Model model) {
         String customerUsername = (String) session.getAttribute("customerUsername");
         if (customerUsername == null) {
             return "redirect:/login";
         }
+        
+        long totalOrders = 0;
+        double totalSpent = 0.0;
+        int cartItemCount = 0;
+        double walletBalance = 0.0;
+        long pendingOrders = 0;
+        long completedOrders = 0;
+        
+        try {
+            java.util.List<com.example.finalexam_jvnc.dto.OrderDTO> orders = orderService.getOrdersByCustomer(customerUsername);
+            totalOrders = orders != null ? orders.size() : 0;
+            
+            if (orders != null) {
+                totalSpent = orders.stream()
+                    .filter(o -> "DONE".equals(o.getStatus()))
+                    .mapToDouble(o -> o.getGrandTotal() != null ? o.getGrandTotal() : 0.0)
+                    .sum();
+                
+                pendingOrders = orders.stream()
+                    .filter(o -> "PENDING_CONFIRMATION".equals(o.getStatus()) || 
+                                "PROCESSING".equals(o.getStatus()) || 
+                                "PACKED".equals(o.getStatus()) || 
+                                "SHIPPED".equals(o.getStatus()))
+                    .count();
+                
+                completedOrders = orders.stream()
+                    .filter(o -> "DONE".equals(o.getStatus()))
+                    .count();
+            }
+        } catch (Exception e) {
+            totalOrders = 0;
+            totalSpent = 0.0;
+        }
+        
+        try {
+            cartItemCount = cartService.getCartItemCount(customerUsername);
+        } catch (Exception e) {
+            cartItemCount = 0;
+        }
+        
+        try {
+            walletBalance = walletService.getBalance(customerUsername);
+        } catch (Exception e) {
+            walletBalance = 0.0;
+        }
+        
         model.addAttribute("customerUsername", customerUsername);
+        model.addAttribute("totalOrders", totalOrders);
+        model.addAttribute("totalSpent", totalSpent);
+        model.addAttribute("cartItemCount", cartItemCount);
+        model.addAttribute("walletBalance", walletBalance);
+        model.addAttribute("pendingOrders", pendingOrders);
+        model.addAttribute("completedOrders", completedOrders);
+        
         return "customer/dashboard-customer";
     }
 
@@ -91,7 +152,6 @@ public class CustomerController {
             return "redirect:/login";
         }
 
-        // Validate basic rules
         if (!changePasswordDTO.getNewPassword().equals(changePasswordDTO.getConfirmPassword())) {
             redirectAttributes.addFlashAttribute("error", "New passwords do not match");
             return "redirect:/customer/change-password";
@@ -143,6 +203,47 @@ public class CustomerController {
         return "customer/products";
     }
 
+    @GetMapping("/products/{id}")
+    public String viewProductDetail(@PathVariable Long id, HttpSession session, Model model) {
+        String customerUsername = (String) session.getAttribute("customerUsername");
+        if (customerUsername == null) {
+            return "redirect:/login";
+        }
+
+        try {
+            com.example.finalexam_jvnc.dto.ItemDTO item = itemService.getItemById(id);
+            if (item == null || (item.getIsActive() != null && !item.getIsActive())) {
+                return "redirect:/customer/products";
+            }
+            model.addAttribute("item", item);
+            model.addAttribute("customerUsername", customerUsername);
+            return "customer/product-detail";
+        } catch (Exception e) {
+            return "redirect:/customer/products";
+        }
+    }
+
+    @GetMapping("/items/{id}/image")
+    @ResponseBody
+    public ResponseEntity<byte[]> getItemImage(@PathVariable Long id) {
+        try {
+            com.example.finalexam_jvnc.model.Item item = itemRepository.findById(id)
+                    .orElseThrow(() -> new RuntimeException("Item not found"));
+            
+            if (item.getImageData() != null && item.getImageData().length > 0) {
+                HttpHeaders headers = new HttpHeaders();
+                headers.setContentType(MediaType.parseMediaType(
+                    item.getImageContentType() != null ? item.getImageContentType() : "image/jpeg"));
+                headers.setContentLength(item.getImageData().length);
+                return new ResponseEntity<>(item.getImageData(), headers, org.springframework.http.HttpStatus.OK);
+            } else {
+                return new ResponseEntity<>(org.springframework.http.HttpStatus.NOT_FOUND);
+            }
+        } catch (Exception e) {
+            return new ResponseEntity<>(org.springframework.http.HttpStatus.NOT_FOUND);
+        }
+    }
+
     @org.springframework.web.bind.annotation.PostMapping("/cart/add")
     public String addToCart(HttpSession session,
             @org.springframework.web.bind.annotation.RequestParam Long itemId,
@@ -176,7 +277,6 @@ public class CustomerController {
         com.example.finalexam_jvnc.dto.CartDTO cart = cartService.getCart(customerUsername);
         model.addAttribute("cart", cart);
 
-        // Fetch profile for shipping info
         com.example.finalexam_jvnc.dto.AccountProfileDTO profile = accountService.getProfile(customerUsername);
         model.addAttribute("profile", profile);
 
@@ -238,8 +338,6 @@ public class CustomerController {
                     paymentMethod);
             redirectAttributes.addFlashAttribute("success",
                     "Order placed successfully! Order #" + order.getOrderNumber());
-            // Redirect to order details or dashboard? Let's go to dashboard for now or a
-            // generic success page
             return "redirect:/customer/dashboard";
         } catch (Exception e) {
             e.printStackTrace();
@@ -310,7 +408,6 @@ public class CustomerController {
 
         try {
             com.example.finalexam_jvnc.dto.OrderDTO order = orderService.getOrderById(id);
-            // Basic security check: ensure the order belongs to this customer
             if (!order.getCustomerUsername().equals(customerUsername)) {
                 return "redirect:/error/403";
             }
@@ -344,6 +441,9 @@ public class CustomerController {
     @Autowired
     private com.example.finalexam_jvnc.service.WalletService walletService;
 
+    @Autowired
+    private com.example.finalexam_jvnc.service.PaymentService paymentService;
+
     @GetMapping("/wallet")
     public String showWallet(HttpSession session, Model model) {
         String customerUsername = (String) session.getAttribute("customerUsername");
@@ -352,15 +452,39 @@ public class CustomerController {
         }
 
         Double balance = walletService.getBalance(customerUsername);
+        java.util.List<com.example.finalexam_jvnc.dto.WalletTransactionDTO> transactions = 
+                walletService.getTransactionHistory(customerUsername);
+        
         model.addAttribute("balance", balance);
+        model.addAttribute("transactions", transactions);
         model.addAttribute("customerUsername", customerUsername);
 
         return "customer/wallet";
     }
 
-    @org.springframework.web.bind.annotation.PostMapping("/wallet/deposit")
-    public String deposit(HttpSession session,
+    @org.springframework.web.bind.annotation.GetMapping("/wallet/deposit")
+    public String showDepositOptions(HttpSession session, Model model) {
+        String customerUsername = (String) session.getAttribute("customerUsername");
+        if (customerUsername == null) {
+            return "redirect:/login";
+        }
+
+        Double balance = walletService.getBalance(customerUsername);
+        model.addAttribute("balance", balance);
+        model.addAttribute("customerUsername", customerUsername);
+        model.addAttribute("bankAccountName", paymentService.getBankAccountName());
+        model.addAttribute("bankAccountNumber", paymentService.getBankAccountNumber());
+        model.addAttribute("bankName", paymentService.getBankName());
+        model.addAttribute("momoAccountName", paymentService.getMoMoAccountName());
+        model.addAttribute("momoPhoneNumber", paymentService.getMoMoPhoneNumber());
+        
+        return "customer/wallet-deposit";
+    }
+
+    @org.springframework.web.bind.annotation.PostMapping("/wallet/deposit/momo")
+    public String depositViaMoMo(HttpSession session,
             @org.springframework.web.bind.annotation.RequestParam Double amount,
+            jakarta.servlet.http.HttpServletRequest request,
             org.springframework.web.servlet.mvc.support.RedirectAttributes redirectAttributes) {
         String customerUsername = (String) session.getAttribute("customerUsername");
         if (customerUsername == null) {
@@ -368,13 +492,100 @@ public class CustomerController {
         }
 
         try {
-            walletService.deposit(customerUsername, amount);
-            redirectAttributes.addFlashAttribute("success", "Deposit successful!");
+            if (amount < 10000) {
+                redirectAttributes.addFlashAttribute("error", "Số tiền nạp tối thiểu là 10.000 đ");
+                return "redirect:/customer/wallet/deposit";
+            }
+
+            String orderInfo = "Nap tien vao vi - " + customerUsername;
+            String returnUrl = request.getRequestURL().toString().replace("/deposit/momo", "/wallet/momo/callback");
+            String paymentUrl = paymentService.createMoMoPaymentUrl(amount, orderInfo, returnUrl);
+            
+            session.setAttribute("pendingDepositAmount", amount);
+            session.setAttribute("pendingDepositUsername", customerUsername);
+            
+            return "redirect:" + paymentUrl;
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("error", "Failed to deposit: " + e.getMessage());
+            String errorMessage = e.getMessage();
+            if (errorMessage != null && errorMessage.length() > 150) {
+                errorMessage = errorMessage.substring(0, 147) + "...";
+            }
+            redirectAttributes.addFlashAttribute("error", 
+                errorMessage != null && errorMessage.contains("MoMo") 
+                    ? errorMessage 
+                    : "Lỗi khi tạo thanh toán MoMo. Vui lòng thử lại sau hoặc sử dụng phương thức thanh toán khác.");
+            return "redirect:/customer/wallet/deposit";
+        }
+    }
+
+    @org.springframework.web.bind.annotation.GetMapping("/wallet/momo/callback")
+    public String momoCallback(
+            @org.springframework.web.bind.annotation.RequestParam(required = false) String resultCode,
+            @org.springframework.web.bind.annotation.RequestParam(required = false) String amount,
+            @org.springframework.web.bind.annotation.RequestParam(required = false) String orderId,
+            HttpSession session,
+            org.springframework.web.servlet.mvc.support.RedirectAttributes redirectAttributes) {
+        String customerUsername = (String) session.getAttribute("customerUsername");
+        Double pendingAmount = (Double) session.getAttribute("pendingDepositAmount");
+        
+        if (customerUsername == null || pendingAmount == null) {
+            redirectAttributes.addFlashAttribute("error", "Phiên làm việc đã hết hạn");
+            return "redirect:/customer/wallet";
+        }
+
+        try {
+            if (paymentService.verifyMoMoCallback(resultCode, amount, orderId)) {
+                walletService.deposit(customerUsername, pendingAmount);
+                session.removeAttribute("pendingDepositAmount");
+                session.removeAttribute("pendingDepositUsername");
+                redirectAttributes.addFlashAttribute("success", 
+                    "Nạp tiền thành công! Đã nạp " + String.format("%,.0f", pendingAmount) + " đ vào ví");
+            } else {
+                redirectAttributes.addFlashAttribute("error", "Thanh toán thất bại hoặc đã bị hủy");
+            }
+        } catch (Exception e) {
+            String errorMessage = e.getMessage();
+            if (errorMessage != null && errorMessage.length() > 150) {
+                errorMessage = errorMessage.substring(0, 147) + "...";
+            }
+            redirectAttributes.addFlashAttribute("error", 
+                errorMessage != null && errorMessage.contains("MoMo") 
+                    ? errorMessage 
+                    : "Lỗi khi xử lý thanh toán. Vui lòng thử lại sau hoặc sử dụng phương thức thanh toán khác.");
         }
 
         return "redirect:/customer/wallet";
+    }
+
+    @org.springframework.web.bind.annotation.PostMapping("/wallet/deposit/qr")
+    public String showQRCode(HttpSession session,
+            @org.springframework.web.bind.annotation.RequestParam Double amount,
+            Model model) {
+        String customerUsername = (String) session.getAttribute("customerUsername");
+        if (customerUsername == null) {
+            return "redirect:/login";
+        }
+
+        if (amount < 10000) {
+            model.addAttribute("error", "Số tiền nạp tối thiểu là 10.000 đ");
+            return showDepositOptions(session, model);
+        }
+
+        String qrData = paymentService.generateQRCodeData(
+            amount,
+            paymentService.getBankAccountName(),
+            paymentService.getBankAccountNumber(),
+            paymentService.getBankName()
+        );
+
+        model.addAttribute("amount", amount);
+        model.addAttribute("qrData", qrData);
+        model.addAttribute("bankAccountName", paymentService.getBankAccountName());
+        model.addAttribute("bankAccountNumber", paymentService.getBankAccountNumber());
+        model.addAttribute("bankName", paymentService.getBankName());
+        model.addAttribute("customerUsername", customerUsername);
+        
+        return "customer/wallet-qr";
     }
 
     @org.springframework.web.bind.annotation.PostMapping("/orders/{id}/refund")

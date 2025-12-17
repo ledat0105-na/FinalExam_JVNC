@@ -1,13 +1,15 @@
 package com.example.finalexam_jvnc.controller;
 
 import com.example.finalexam_jvnc.dto.*;
-import com.example.finalexam_jvnc.model.Refund;
 import com.example.finalexam_jvnc.repository.AccountRepository;
-import com.example.finalexam_jvnc.repository.RefundRepository;
+import com.example.finalexam_jvnc.repository.CategoryRepository;
+import com.example.finalexam_jvnc.repository.ItemRepository;
 import com.example.finalexam_jvnc.service.*;
+import com.example.finalexam_jvnc.service.impl.FileStorageService;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
@@ -68,15 +70,13 @@ public class AdminController {
     private AccountRepository accountRepository;
 
     @Autowired
-    private RefundRepository refundRepository;
+    private WalletService walletService;
 
-    // Admin Login - kept for backward compatibility, but redirects to unified login
     @GetMapping("/login")
     public String showLoginPage() {
         return "redirect:/login";
     }
 
-    // Admin Dashboard
     @GetMapping("/dashboard")
     public String dashboard(HttpSession session, Model model) {
         String adminUsername = (String) session.getAttribute("adminUsername");
@@ -84,11 +84,14 @@ public class AdminController {
             return "redirect:/login";
         }
 
-        // Get statistics for dashboard
         long totalUsers = 0;
         long pendingRefunds = 0;
         long todayAccess = 0;
         long lowStockAlerts = 0;
+        long totalOrders = 0;
+        double totalRevenue = 0.0;
+        long totalItems = 0;
+        long totalCategories = 0;
 
         try {
             totalUsers = accountRepository.count();
@@ -96,7 +99,6 @@ public class AdminController {
             totalUsers = 0;
         }
 
-        // Count pending refunds (PENDING or REQUESTED status)
         try {
             List<RefundDTO> pendingRefundsList = refundService.getRefundsByStatus("PENDING");
             List<RefundDTO> requestedRefundsList = refundService.getRefundsByStatus("REQUESTED");
@@ -107,11 +109,9 @@ public class AdminController {
                 pendingRefunds += requestedRefundsList.size();
             }
         } catch (Exception e) {
-            // If there's an error, set to 0
             pendingRefunds = 0;
         }
 
-        // Count accounts that logged in today
         try {
             LocalDate today = LocalDate.now();
             LocalDateTime startOfDay = today.atStartOfDay();
@@ -122,7 +122,6 @@ public class AdminController {
             todayAccess = 0;
         }
 
-        // Count low stock alerts
         try {
             List<StockItemDTO> lowStockItems = stockItemService.getLowStockItems();
             lowStockAlerts = lowStockItems != null ? lowStockItems.size() : 0;
@@ -130,11 +129,47 @@ public class AdminController {
             lowStockAlerts = 0;
         }
 
+        try {
+            List<OrderDTO> allOrders = orderService.getAllOrders();
+            totalOrders = allOrders != null ? allOrders.size() : 0;
+        } catch (Exception e) {
+            totalOrders = 0;
+        }
+
+        try {
+            LocalDate today = LocalDate.now();
+            RevenueReportDTO monthlyReport = reportService.getRevenueReportByMonth(
+                today.getYear(), today.getMonthValue()
+            );
+            totalRevenue = monthlyReport != null ? monthlyReport.getTotalRevenue() : 0.0;
+        } catch (Exception e) {
+            totalRevenue = 0.0;
+        }
+
+        try {
+            List<ItemDTO> allItems = itemService.getAllItems();
+            totalItems = allItems != null ? allItems.size() : 0;
+        } catch (Exception e) {
+            totalItems = 0;
+        }
+
+        // Get total categories
+        try {
+            List<CategoryDTO> allCategories = categoryService.getAllCategories();
+            totalCategories = allCategories != null ? allCategories.size() : 0;
+        } catch (Exception e) {
+            totalCategories = 0;
+        }
+
         model.addAttribute("adminUsername", adminUsername);
         model.addAttribute("totalUsers", totalUsers);
         model.addAttribute("pendingApprovals", pendingRefunds);
         model.addAttribute("todayAccess", todayAccess);
         model.addAttribute("lowStockAlerts", lowStockAlerts);
+        model.addAttribute("totalOrders", totalOrders);
+        model.addAttribute("totalRevenue", totalRevenue);
+        model.addAttribute("totalItems", totalItems);
+        model.addAttribute("totalCategories", totalCategories);
         return "admin/dashboard-admin";
     }
 
@@ -146,8 +181,35 @@ public class AdminController {
             return "redirect:/login";
         }
 
-        List<AccountDTO> accounts = adminService.getAllAccountsForAdmin();
-        model.addAttribute("accounts", accounts);
+        List<AccountDTO> allAccounts = adminService.getAllAccountsForAdmin();
+        
+        // Separate ADMIN, STAFF and CUSTOMER accounts
+        List<AccountDTO> adminAccounts = new java.util.ArrayList<>();
+        List<AccountDTO> staffAccounts = new java.util.ArrayList<>();
+        List<AccountDTO> customerAccounts = new java.util.ArrayList<>();
+        
+        for (AccountDTO account : allAccounts) {
+            // Add to ADMIN list if has ADMIN role
+            if (account.getRoleCodes().contains("ADMIN")) {
+                adminAccounts.add(account);
+            }
+            
+            // Add to STAFF list if has STAFF role
+            if (account.getRoleCodes().contains("STAFF")) {
+                staffAccounts.add(account);
+            }
+            
+            // Add to CUSTOMER list if has CUSTOMER role
+            if (account.getRoleCodes().contains("CUSTOMER")) {
+                Double balance = walletService.getBalance(account.getUsername());
+                account.setWalletBalance(balance);
+                customerAccounts.add(account);
+            }
+        }
+        
+        model.addAttribute("adminAccounts", adminAccounts);
+        model.addAttribute("staffAccounts", staffAccounts);
+        model.addAttribute("customerAccounts", customerAccounts);
         return "admin/accounts-list-admin";
     }
 
@@ -364,13 +426,43 @@ public class AdminController {
     // ========== ITEM MANAGEMENT ==========
 
     @GetMapping("/items")
-    public String listItems(HttpSession session, Model model) {
+    public String listItems(HttpSession session, 
+            Model model,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) Long categoryId,
+            @RequestParam(required = false) String status) {
         String adminUsername = (String) session.getAttribute("adminUsername");
         if (adminUsername == null || !accountService.isAdmin(adminUsername)) {
             return "redirect:/login";
         }
-        List<ItemDTO> items = itemService.getAllItems();
+        
+        List<ItemDTO> items;
+        
+        // Filter by keyword or category if provided
+        if ((keyword != null && !keyword.isEmpty()) || categoryId != null) {
+            items = itemService.searchItems(keyword != null ? keyword : "", categoryId);
+        } else {
+            items = itemService.getAllItems();
+        }
+        
+        // Filter by status (active/inactive) if provided
+        if (status != null && !status.isEmpty()) {
+            if ("active".equals(status)) {
+                items = items.stream()
+                    .filter(item -> item.getIsActive() != null && item.getIsActive())
+                    .collect(java.util.stream.Collectors.toList());
+            } else if ("inactive".equals(status)) {
+                items = items.stream()
+                    .filter(item -> item.getIsActive() == null || !item.getIsActive())
+                    .collect(java.util.stream.Collectors.toList());
+            }
+        }
+        
         model.addAttribute("items", items);
+        model.addAttribute("categories", categoryService.getActiveCategories());
+        model.addAttribute("selectedKeyword", keyword);
+        model.addAttribute("selectedCategoryId", categoryId);
+        model.addAttribute("selectedStatus", status);
         return "admin/items-list";
     }
 
@@ -380,9 +472,25 @@ public class AdminController {
         if (adminUsername == null || !accountService.isAdmin(adminUsername)) {
             return "redirect:/login";
         }
-        model.addAttribute("item", new ItemDTO());
-        model.addAttribute("categories", categoryService.getActiveCategories());
+        // Use item from flash attribute if available (e.g., after validation error), otherwise create new
+        if (!model.containsAttribute("item")) {
+            model.addAttribute("item", new ItemDTO());
+        }
+        if (!model.containsAttribute("categories")) {
+            model.addAttribute("categories", categoryService.getActiveCategories());
+        }
         return "admin/item-form";
+    }
+
+    @GetMapping("/items/{id}")
+    public String showItemDetail(@PathVariable Long id, HttpSession session, Model model) {
+        String adminUsername = (String) session.getAttribute("adminUsername");
+        if (adminUsername == null || !accountService.isAdmin(adminUsername)) {
+            return "redirect:/login";
+        }
+        ItemDTO item = itemService.getItemById(id);
+        model.addAttribute("item", item);
+        return "admin/item-detail";
     }
 
     @GetMapping("/items/{id}/edit")
@@ -391,14 +499,25 @@ public class AdminController {
         if (adminUsername == null || !accountService.isAdmin(adminUsername)) {
             return "redirect:/login";
         }
-        ItemDTO item = itemService.getItemById(id);
-        model.addAttribute("item", item);
-        model.addAttribute("categories", categoryService.getActiveCategories());
+        // Use item from flash attribute if available (e.g., after validation error), otherwise fetch from service
+        if (!model.containsAttribute("item")) {
+            ItemDTO item = itemService.getItemById(id);
+            model.addAttribute("item", item);
+        }
+        if (!model.containsAttribute("categories")) {
+            model.addAttribute("categories", categoryService.getActiveCategories());
+        }
         return "admin/item-form";
     }
 
     @Autowired
     private FileStorageService fileStorageService;
+
+    @Autowired
+    private ItemRepository itemRepository;
+
+    @Autowired
+    private CategoryRepository categoryRepository;
 
     // ... (existing injections)
 
@@ -412,35 +531,124 @@ public class AdminController {
             return "redirect:/login";
         }
         try {
-            // Handle image upload
-            if (imageFile != null && !imageFile.isEmpty()) {
-                String imageUrl = fileStorageService.storeFile(imageFile);
-                itemDTO.setImageUrl(imageUrl);
+            // Validate SKU uniqueness
+            if (itemDTO.getItemId() == null) {
+                // Creating new item - check if SKU already exists
+                if (itemRepository.findBySku(itemDTO.getSku()).isPresent()) {
+                    redirectAttributes.addFlashAttribute("error", 
+                        "Mã SKU '" + itemDTO.getSku() + "' đã tồn tại. Vui lòng sử dụng mã SKU khác.");
+                    redirectAttributes.addFlashAttribute("item", itemDTO);
+                    redirectAttributes.addFlashAttribute("categories", categoryService.getActiveCategories());
+                    return "redirect:/admin/items/new";
+                }
             } else {
-                // Keep existing image if no new file uploaded and editing
-                if (itemDTO.getItemId() != null) {
-                    ItemDTO existingItem = itemService.getItemById(itemDTO.getItemId());
-                    if (itemDTO.getImageUrl() == null || itemDTO.getImageUrl().isEmpty()) {
-                        itemDTO.setImageUrl(existingItem.getImageUrl());
+                com.example.finalexam_jvnc.model.Item existingItem = itemRepository.findById(itemDTO.getItemId())
+                        .orElseThrow(() -> new RuntimeException("Item not found"));
+                if (!existingItem.getSku().equals(itemDTO.getSku())) {
+                    if (itemRepository.findBySku(itemDTO.getSku()).isPresent()) {
+                        redirectAttributes.addFlashAttribute("error", 
+                            "Mã SKU '" + itemDTO.getSku() + "' đã tồn tại. Vui lòng sử dụng mã SKU khác.");
+                        redirectAttributes.addFlashAttribute("item", itemDTO);
+                        redirectAttributes.addFlashAttribute("categories", categoryService.getActiveCategories());
+                        return "redirect:/admin/items/" + itemDTO.getItemId() + "/edit";
                     }
                 }
             }
-
+            
+            com.example.finalexam_jvnc.model.Item item;
+            
             if (itemDTO.getItemId() == null) {
-                itemService.createItem(itemDTO);
-                redirectAttributes.addFlashAttribute("success", "Item created successfully");
+                item = new com.example.finalexam_jvnc.model.Item();
             } else {
-                // If checking existing item logic above didn't set URL (e.g. creating new),
-                // handled by service or simply null
-                itemService.updateItem(itemDTO.getItemId(), itemDTO);
-                redirectAttributes.addFlashAttribute("success", "Item updated successfully");
+                item = itemRepository.findById(itemDTO.getItemId())
+                        .orElseThrow(() -> new RuntimeException("Item not found"));
             }
+
+            com.example.finalexam_jvnc.model.Category category = categoryRepository.findById(itemDTO.getCategoryId())
+                    .orElseThrow(() -> new RuntimeException("Category not found"));
+            item.setCategory(category);
+            item.setSku(itemDTO.getSku());
+            item.setItemName(itemDTO.getItemName());
+            item.setItemType(itemDTO.getItemType());
+            item.setUnitName(itemDTO.getUnitName());
+            item.setUnitPrice(itemDTO.getUnitPrice());
+            item.setWeightKg(itemDTO.getWeightKg());
+            item.setDescription(itemDTO.getDescription());
+            item.setIsActive(itemDTO.getIsActive() != null ? itemDTO.getIsActive() : true);
+
+            // Handle image upload
+            if (imageFile != null && !imageFile.isEmpty()) {
+                byte[] imageData = imageFile.getBytes();
+                item.setImageData(imageData);
+                item.setImageContentType(imageFile.getContentType());
+                
+                // Save item first to get the ID (needed for new items)
+                item = itemRepository.save(item);
+                
+                // Set imageUrl to point to the image endpoint
+                item.setImageUrl("/admin/items/" + item.getItemId() + "/image");
+                
+                // Save again with the imageUrl
+                item = itemRepository.save(item);
+            } else {
+                // No new image uploaded - preserve existing image data if updating
+                if (itemDTO.getItemId() != null) {
+                    com.example.finalexam_jvnc.model.Item existingItem = itemRepository.findById(itemDTO.getItemId()).orElse(null);
+                    if (existingItem != null) {
+                        item.setImageData(existingItem.getImageData());
+                        item.setImageContentType(existingItem.getImageContentType());
+                        item.setImageUrl(existingItem.getImageUrl());
+                    }
+                }
+                // Save item (either with preserved image or new item without image)
+                itemRepository.save(item);
+            }
+            redirectAttributes.addFlashAttribute("success", 
+                itemDTO.getItemId() == null ? "Sản phẩm đã được tạo thành công" : "Sản phẩm đã được cập nhật thành công");
+        } catch (org.springframework.dao.DataIntegrityViolationException e) {
+            e.printStackTrace();
+            String errorMessage = "Lỗi: ";
+            if (e.getMessage() != null && e.getMessage().contains("Duplicate entry") && e.getMessage().contains("sku")) {
+                errorMessage = "Mã SKU '" + itemDTO.getSku() + "' đã tồn tại. Vui lòng sử dụng mã SKU khác.";
+            } else {
+                errorMessage += e.getMessage();
+            }
+            redirectAttributes.addFlashAttribute("error", errorMessage);
+            redirectAttributes.addFlashAttribute("item", itemDTO);
+            redirectAttributes.addFlashAttribute("categories", categoryService.getActiveCategories());
+            return itemDTO.getItemId() == null ? "redirect:/admin/items/new"
+                    : "redirect:/admin/items/" + itemDTO.getItemId() + "/edit";
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("error", e.getMessage());
+            e.printStackTrace();
+            String errorMessage = "Lỗi: " + (e.getMessage() != null ? e.getMessage() : "Đã xảy ra lỗi không xác định");
+            redirectAttributes.addFlashAttribute("error", errorMessage);
+            redirectAttributes.addFlashAttribute("item", itemDTO);
+            redirectAttributes.addFlashAttribute("categories", categoryService.getActiveCategories());
             return itemDTO.getItemId() == null ? "redirect:/admin/items/new"
                     : "redirect:/admin/items/" + itemDTO.getItemId() + "/edit";
         }
         return "redirect:/admin/items";
+    }
+
+    @GetMapping("/items/{id}/image")
+    @ResponseBody
+    public org.springframework.http.ResponseEntity<byte[]> getItemImage(@PathVariable Long id) {
+        try {
+            com.example.finalexam_jvnc.model.Item item = itemRepository.findById(id)
+                    .orElseThrow(() -> new RuntimeException("Item not found"));
+            
+            if (item.getImageData() != null && item.getImageData().length > 0) {
+                HttpHeaders headers = new HttpHeaders();
+                headers.setContentType(MediaType.parseMediaType(
+                    item.getImageContentType() != null ? item.getImageContentType() : "image/jpeg"));
+                headers.setContentLength(item.getImageData().length);
+                return new org.springframework.http.ResponseEntity<>(item.getImageData(), headers, org.springframework.http.HttpStatus.OK);
+            } else {
+                return new org.springframework.http.ResponseEntity<>(org.springframework.http.HttpStatus.NOT_FOUND);
+            }
+        } catch (Exception e) {
+            return new org.springframework.http.ResponseEntity<>(org.springframework.http.HttpStatus.NOT_FOUND);
+        }
     }
 
     @PostMapping("/items/{id}/delete")
@@ -639,120 +847,6 @@ public class AdminController {
         };
     }
 
-    // ========== SYSTEM CONFIG MANAGEMENT ==========
-
-    @GetMapping("/system-config")
-    public String listSystemConfigs(HttpSession session, Model model) {
-        String adminUsername = (String) session.getAttribute("adminUsername");
-        if (adminUsername == null || !accountService.isAdmin(adminUsername)) {
-            return "redirect:/login";
-        }
-
-        List<SystemConfigDTO> configs = systemConfigService.getAllConfigs();
-        model.addAttribute("configs", configs);
-        model.addAttribute("adminUsername", adminUsername);
-        return "admin/system-config-list";
-    }
-
-    @PostMapping("/system-config/{key}/update")
-    public String updateSystemConfig(@PathVariable String key,
-            @RequestParam String value,
-            HttpSession session,
-            RedirectAttributes redirectAttributes) {
-        String adminUsername = (String) session.getAttribute("adminUsername");
-        if (adminUsername == null || !accountService.isAdmin(adminUsername)) {
-            return "redirect:/login";
-        }
-
-        try {
-            systemConfigService.updateConfig(key, value);
-            redirectAttributes.addFlashAttribute("success",
-                    "Cập nhật cấu hình hệ thống thành công!");
-        } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("error",
-                    "Lỗi khi cập nhật cấu hình: " + e.getMessage());
-        }
-
-        return "redirect:/admin/system-config";
-    }
-
-    @GetMapping("/system-config/new")
-    public String showCreateSystemConfigForm(HttpSession session, Model model) {
-        String adminUsername = (String) session.getAttribute("adminUsername");
-        if (adminUsername == null || !accountService.isAdmin(adminUsername)) {
-            return "redirect:/login";
-        }
-
-        model.addAttribute("config", new SystemConfigDTO());
-        model.addAttribute("adminUsername", adminUsername);
-        return "admin/system-config-form";
-    }
-
-    @PostMapping("/system-config")
-    public String createSystemConfig(@ModelAttribute SystemConfigDTO configDTO,
-            HttpSession session,
-            RedirectAttributes redirectAttributes) {
-        String adminUsername = (String) session.getAttribute("adminUsername");
-        if (adminUsername == null || !accountService.isAdmin(adminUsername)) {
-            return "redirect:/login";
-        }
-
-        try {
-            systemConfigService.createOrUpdateConfig(configDTO);
-            redirectAttributes.addFlashAttribute("success",
-                    "Tạo cấu hình hệ thống thành công!");
-        } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("error",
-                    "Lỗi khi tạo cấu hình: " + e.getMessage());
-            return "redirect:/admin/system-config/new";
-        }
-
-        return "redirect:/admin/system-config";
-    }
-
-    @PostMapping("/system-config/{key}/delete")
-    public String deleteSystemConfig(@PathVariable String key,
-            HttpSession session,
-            RedirectAttributes redirectAttributes) {
-        String adminUsername = (String) session.getAttribute("adminUsername");
-        if (adminUsername == null || !accountService.isAdmin(adminUsername)) {
-            return "redirect:/login";
-        }
-
-        try {
-            systemConfigService.deleteConfig(key);
-            redirectAttributes.addFlashAttribute("success",
-                    "Xóa cấu hình hệ thống thành công!");
-        } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("error",
-                    "Lỗi khi xóa cấu hình: " + e.getMessage());
-        }
-
-        return "redirect:/admin/system-config";
-    }
-
-    @PostMapping("/system-config/{key}/toggle-active")
-    public String toggleSystemConfigActive(@PathVariable String key,
-            HttpSession session,
-            RedirectAttributes redirectAttributes) {
-        String adminUsername = (String) session.getAttribute("adminUsername");
-        if (adminUsername == null || !accountService.isAdmin(adminUsername)) {
-            return "redirect:/login";
-        }
-
-        try {
-            SystemConfigDTO config = systemConfigService.toggleActive(key);
-            String status = config.getIsActive() ? "kích hoạt" : "vô hiệu hóa";
-            redirectAttributes.addFlashAttribute("success",
-                    "Đã " + status + " cấu hình hệ thống thành công!");
-        } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("error",
-                    "Lỗi khi cập nhật trạng thái: " + e.getMessage());
-        }
-
-        return "redirect:/admin/system-config";
-    }
-
     // ========== STOCK MANAGEMENT ==========
 
     @GetMapping("/stock/low-stock")
@@ -766,6 +860,42 @@ public class AdminController {
         model.addAttribute("lowStockItems", lowStockItems);
         model.addAttribute("adminUsername", adminUsername);
         return "admin/stock-low-stock";
+    }
+
+    @GetMapping("/stock/{id}/edit")
+    public String showEditStockForm(@PathVariable Long id,
+            HttpSession session,
+            Model model) {
+        String adminUsername = (String) session.getAttribute("adminUsername");
+        if (adminUsername == null || !accountService.isAdmin(adminUsername)) {
+            return "redirect:/login";
+        }
+
+        StockItemDTO stockItem = stockItemService.getStockItemById(id);
+        model.addAttribute("stockItem", stockItem);
+        model.addAttribute("adminUsername", adminUsername);
+        return "admin/stock-edit";
+    }
+
+    @PostMapping("/stock/{id}/update")
+    public String updateStock(@PathVariable Long id,
+            @RequestParam Integer quantityOnHand,
+            @RequestParam(required = false) Integer lowStockThreshold,
+            HttpSession session,
+            RedirectAttributes redirectAttributes) {
+        String adminUsername = (String) session.getAttribute("adminUsername");
+        if (adminUsername == null || !accountService.isAdmin(adminUsername)) {
+            return "redirect:/login";
+        }
+
+        try {
+            stockItemService.updateStockQuantity(id, quantityOnHand, lowStockThreshold);
+            redirectAttributes.addFlashAttribute("success", "Cập nhật tồn kho thành công!");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Lỗi khi cập nhật tồn kho: " + e.getMessage());
+        }
+
+        return "redirect:/admin/stock/low-stock";
     }
 
     // ========== ORDER MANAGEMENT ==========
@@ -1104,5 +1234,86 @@ public class AdminController {
         model.addAttribute("limit", limit);
         model.addAttribute("adminUsername", adminUsername);
         return "admin/best-selling";
+    }
+
+    // ========== WALLET MANAGEMENT ==========
+
+    @GetMapping("/wallet/deposit")
+    public String showDepositForm(HttpSession session, Model model,
+            @RequestParam(required = false) String username) {
+        String adminUsername = (String) session.getAttribute("adminUsername");
+        if (adminUsername == null || !accountService.isAdmin(adminUsername)) {
+            return "redirect:/login";
+        }
+
+        if (username != null && !username.isEmpty()) {
+            model.addAttribute("selectedUsername", username);
+        }
+
+        List<AccountDTO> customers = adminService.getAllAccountsForAdmin().stream()
+                .filter(acc -> acc.getRoleCodes().contains("CUSTOMER"))
+                .toList();
+        
+        model.addAttribute("customers", customers);
+        model.addAttribute("adminUsername", adminUsername);
+        return "admin/wallet-deposit";
+    }
+
+    @PostMapping("/wallet/deposit")
+    public String depositToCustomerWallet(
+            @RequestParam String username,
+            @RequestParam Double amount,
+            @RequestParam(required = false) String note,
+            HttpSession session,
+            RedirectAttributes redirectAttributes) {
+        String adminUsername = (String) session.getAttribute("adminUsername");
+        if (adminUsername == null || !accountService.isAdmin(adminUsername)) {
+            return "redirect:/login";
+        }
+
+        try {
+            if (amount <= 0) {
+                redirectAttributes.addFlashAttribute("error", "Số tiền phải lớn hơn 0");
+                return "redirect:/admin/wallet/deposit?username=" + username;
+            }
+
+            walletService.deposit(username, amount);
+            redirectAttributes.addFlashAttribute("success", 
+                "Nạp tiền thành công! Đã nạp " + String.format("%,.0f", amount) + " đ vào ví của " + username);
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", 
+                "Lỗi khi nạp tiền: " + e.getMessage());
+        }
+
+        return "redirect:/admin/wallet/deposit?username=" + username;
+    }
+
+    @GetMapping("/accounts/{id}/wallet")
+    public String viewCustomerWallet(@PathVariable Long id, HttpSession session, Model model,
+            RedirectAttributes redirectAttributes) {
+        String adminUsername = (String) session.getAttribute("adminUsername");
+        if (adminUsername == null || !accountService.isAdmin(adminUsername)) {
+            return "redirect:/login";
+        }
+
+        AccountDTO account = adminService.getAccountDetails(id);
+        if (account == null) {
+            return "redirect:/admin/accounts";
+        }
+
+        if (!account.getRoleCodes().contains("CUSTOMER")) {
+            redirectAttributes.addFlashAttribute("error", "Chỉ có thể xem ví của khách hàng");
+            return "redirect:/admin/accounts";
+        }
+
+        Double balance = walletService.getBalance(account.getUsername());
+        List<WalletTransactionDTO> transactions = walletService.getTransactionHistory(account.getUsername());
+
+        model.addAttribute("account", account);
+        model.addAttribute("balance", balance);
+        model.addAttribute("transactions", transactions);
+        model.addAttribute("adminUsername", adminUsername);
+
+        return "admin/customer-wallet-details";
     }
 }

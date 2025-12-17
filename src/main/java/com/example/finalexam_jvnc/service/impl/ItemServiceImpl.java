@@ -128,7 +128,7 @@ public class ItemServiceImpl implements ItemService {
 
     @Override
     public List<ItemDTO> searchItems(String keyword, Long categoryId) {
-        return itemRepository.searchActiveItems(keyword, categoryId).stream()
+        return itemRepository.searchAllItems(keyword != null ? keyword : "", categoryId).stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
@@ -234,6 +234,7 @@ public class ItemServiceImpl implements ItemService {
     }
 
     private ItemDTO convertToDTO(Item item) {
+        boolean hasImage = (item.getImageData() != null && item.getImageData().length > 0);
         return ItemDTO.builder()
                 .itemId(item.getItemId())
                 .categoryId(item.getCategory().getCategoryId())
@@ -247,6 +248,7 @@ public class ItemServiceImpl implements ItemService {
                 .description(item.getDescription())
                 .imageUrl(item.getImageUrl())
                 .isActive(item.getIsActive())
+                .hasImage(hasImage)
                 .build();
     }
 }

@@ -8,75 +8,560 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <link th:href="@{/css/style.css}" rel="stylesheet">
+    <link th:href="@{/css/admin-layout.css}" rel="stylesheet">
+    <style>
+        .accounts-table {
+            font-size: 0.95rem;
+        }
+        .accounts-table thead th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+            color: white !important;
+            font-weight: 700 !important;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 0.5px;
+            border: none !important;
+        }
+        .accounts-table tbody tr {
+            transition: all 0.2s ease;
+        }
+        .accounts-table tbody tr:hover {
+            background-color: #f8f9fa;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .accounts-table tbody td {
+            vertical-align: middle;
+            border-color: #e9ecef;
+        }
+        .accounts-table tbody td.status-cell,
+        .accounts-table tbody td.wallet-cell {
+            white-space: nowrap;
+            min-width: 120px;
+        }
+        .user-avatar {
+            width: 45px;
+            height: 45px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+        .user-name {
+            font-weight: 700;
+            font-size: 1rem;
+            color: #212529;
+            margin-bottom: 2px;
+        }
+        .user-email {
+            font-size: 0.875rem;
+            color: #6c757d;
+        }
+        .role-badge {
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 0.35rem 0.6rem;
+            border-radius: 15px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            white-space: nowrap;
+            display: inline-block;
+        }
+        .role-badge.admin {
+            background: #dc3545 !important;
+            color: white !important;
+        }
+        .role-badge.staff {
+            background: #ffc107 !important;
+            color: #000 !important;
+        }
+        .role-badge.customer {
+            background: #0dcaf0 !important;
+            color: white !important;
+        }
+        .status-badge {
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 0.35rem 0.6rem;
+            border-radius: 15px;
+            border: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            white-space: nowrap;
+            display: inline-block;
+        }
+        .status-badge.active {
+            background: #198754 !important;
+            color: white !important;
+        }
+        .status-badge.locked {
+            background: #dc3545 !important;
+            color: white !important;
+        }
+        .wallet-badge {
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 0.35rem 0.6rem;
+            border-radius: 15px;
+            background: linear-gradient(135deg, #0dcaf0 0%, #0aa2c0 100%) !important;
+            color: white !important;
+            border: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            white-space: nowrap;
+            display: inline-block;
+        }
+        .action-btn {
+            width: 38px;
+            height: 38px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            border-width: 2px;
+        }
+        .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+        .account-id {
+            font-weight: 700;
+            color: #495057;
+            font-size: 1rem;
+        }
+        .last-login {
+            font-size: 0.875rem;
+            color: #6c757d;
+            font-weight: 500;
+        }
+        .nav-tabs {
+            border-bottom: 2px solid #e9ecef;
+            background: white;
+            padding: 0;
+            margin-bottom: 1.5rem;
+        }
+        .nav-tabs .nav-link {
+            color: #6c757d;
+            border: none;
+            border-bottom: 3px solid transparent;
+            padding: 1rem 1.5rem;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: transparent;
+        }
+        .nav-tabs .nav-link:hover {
+            color: #495057;
+            border-bottom-color: #dee2e6;
+            background: #f8f9fa;
+        }
+        .nav-tabs .nav-link.active {
+            color: #667eea;
+            background: transparent;
+            border-bottom-color: #667eea;
+            font-weight: 700;
+        }
+        .tab-content {
+            margin-top: 0;
+        }
+        .more-btn {
+            cursor: pointer;
+        }
+        /* Fix modal hiển thị ở giữa màn hình */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1055;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.5);
+        }
+        .modal.show {
+            display: flex !important;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal.fade .modal-dialog {
+            transition: transform 0.3s ease-out;
+            transform: translate(0, -50px);
+        }
+        .modal.show .modal-dialog {
+            transform: translate(0, 0);
+        }
+        .modal-dialog-centered {
+            display: flex;
+            align-items: center;
+            min-height: calc(100% - 1rem);
+            margin: 1rem auto;
+        }
+        .modal-dialog {
+            margin: auto;
+            position: relative;
+            width: auto;
+            max-width: 500px;
+            pointer-events: none;
+        }
+        .modal-content {
+            pointer-events: auto;
+        }
+    </style>
 </head>
-<body class="admin-page">
-    <!-- Navbar Fragment -->
-    <div th:replace="~{fragments/navbar :: navbar}"></div>
-
-<div class="container mt-4 mb-5">
+<body class="admin-dashboard">
+    <div th:replace="~{fragments/admin-sidebar :: admin-sidebar}"></div>
+    
+    <main class="admin-main-content" id="mainContent">
+        <div th:replace="~{fragments/admin-header :: admin-header('Quản lý tài khoản')}"></div>
+        
+        <div class="dashboard-content">
+<div class="container-fluid">
     <div th:if="${success}" class="alert alert-success border-0 shadow-sm"><i class="bi bi-check-circle me-2"></i><span th:text="${success}"></span></div>
     <div th:if="${error}" class="alert alert-danger border-0 shadow-sm"><i class="bi bi-exclamation-triangle me-2"></i><span th:text="${error}"></span></div>
 
-    <div class="page-header d-flex justify-content-between align-items-center">
-        <div>
-            <h2 class="fw-bold mb-1">Quản lý tài khoản</h2>
-            <p class="mb-0 opacity-90">Danh sách và trạng thái người dùng hệ thống.</p>
-        </div>
-        <a th:href="@{/admin/accounts/new}" class="btn btn-light text-primary fw-bold shadow-sm"><i class="bi bi-plus-lg"></i> Thêm mới</a>
+    <div class="d-flex justify-content-end align-items-center flex-wrap gap-2 mb-4">
+        <a href="javascript:history.back();" class="btn btn-outline-secondary fw-bold shadow-sm">
+            <i class="bi bi-arrow-left me-2"></i>Quay lại
+        </a>
+        <a th:href="@{/admin/accounts/new}" class="btn btn-primary fw-bold shadow-sm">
+            <i class="bi bi-plus-lg me-2"></i>Thêm mới
+        </a>
     </div>
 
-    <div class="card">
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover mb-0">
-                    <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Người dùng</th>
-                        <th>Vai trò (Roles)</th>
-                        <th>Trạng thái</th>
-                        <th>Login cuối</th>
-                        <th class="text-end">Thao tác</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    <tr th:each="account : ${accounts}">
-                        <td class="fw-bold text-muted" th:text="'#' + ${account.accountId}"></td>
-                        <td>
-                            <div class="d-flex align-items-center">
-                                <div class="bg-light rounded-circle p-2 me-3 text-primary"><i class="bi bi-person-fill"></i></div>
-                                <div>
-                                    <div class="fw-bold text-dark" th:text="${account.username}"></div>
-                                    <div class="small text-muted" th:text="${account.email}"></div>
-                                </div>
-                            </div>
-                        </td>
-                        <td>
-                            <span th:each="role : ${account.roleCodes}" class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-10 me-1" th:text="${role}"></span>
-                        </td>
-                        <td>
-                            <span th:if="${account.isLocked}" class="badge bg-danger bg-opacity-10 text-danger"><i class="bi bi-lock-fill"></i> Đã khóa</span>
-                            <span th:unless="${account.isLocked}" class="badge bg-success bg-opacity-10 text-success"><i class="bi bi-check-circle-fill"></i> Hoạt động</span>
-                        </td>
-                        <td class="text-muted small" th:text="${account.lastLoginAt != null ? #temporals.format(account.lastLoginAt, 'dd/MM/yyyy HH:mm') : '-'}"></td>
-                        <td class="text-end">
-                            <a th:href="@{/admin/accounts/{id}(id=${account.accountId})}" class="btn btn-light btn-action text-primary" title="Chi tiết"><i class="bi bi-eye"></i></a>
-                            <a th:href="@{/admin/accounts/{id}/roles(id=${account.accountId})}" class="btn btn-light btn-action text-warning" title="Phân quyền"><i class="bi bi-shield-lock"></i></a>
+    <!-- Tabs Navigation -->
+    <ul class="nav nav-tabs mb-4" id="accountTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active fw-bold" id="admin-tab" data-bs-toggle="tab" data-bs-target="#admin" type="button" role="tab">
+                <i class="bi bi-shield-check me-2"></i>Quản trị viên (<span th:text="${#lists.size(adminAccounts)}">0</span>)
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link fw-bold" id="staff-tab" data-bs-toggle="tab" data-bs-target="#staff" type="button" role="tab">
+                <i class="bi bi-person-badge me-2"></i>Nhân viên (<span th:text="${#lists.size(staffAccounts)}">0</span>)
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link fw-bold" id="customer-tab" data-bs-toggle="tab" data-bs-target="#customer" type="button" role="tab">
+                <i class="bi bi-people me-2"></i>Người dùng (<span th:text="${#lists.size(customerAccounts)}">0</span>)
+            </button>
+        </li>
+    </ul>
 
-                            <form th:action="@{/admin/accounts/{id}/toggle-lock(id=${account.accountId})}" method="post" class="d-inline">
-                                <button type="submit" class="btn btn-action ms-1" th:classappend="${account.isLocked} ? 'btn-success' : 'btn-danger'" th:title="${account.isLocked} ? 'Mở khóa' : 'Khóa'">
-                                    <i th:class="${account.isLocked} ? 'bi bi-unlock' : 'bi bi-lock'"></i>
-                                </button>
-                            </form>
-                        </td>
-                    </tr>
-                    </tbody>
-                </table>
+    <!-- Tab Content -->
+    <div class="tab-content" id="accountTabsContent">
+        <!-- Admin Tab -->
+        <div class="tab-pane fade show active" id="admin" role="tabpanel">
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0 align-middle accounts-table">
+                            <thead>
+                            <tr>
+                                <th class="py-3 px-4">ID</th>
+                                <th class="py-3 px-4">Người dùng</th>
+                                <th class="py-3 px-4">Vai trò</th>
+                                <th class="py-3 px-4">Trạng thái</th>
+                                <th class="py-3 px-4">Login cuối</th>
+                                <th class="py-3 px-4 text-end">Thao tác</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:if="${#lists.isEmpty(adminAccounts)}">
+                                <td colspan="6" class="text-center py-5 text-muted">
+                                    <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                                    Chưa có quản trị viên nào
+                                </td>
+                            </tr>
+                            <tr th:each="account : ${adminAccounts}">
+                                <td class="account-id px-4 py-3" th:text="'#' + ${account.accountId}"></td>
+                                <td class="px-4 py-3">
+                                    <div class="d-flex align-items-center">
+                                        <div class="user-avatar me-3">
+                                            <i class="bi bi-shield-check"></i>
+                                        </div>
+                                        <div>
+                                            <div class="user-name" th:text="${account.username}"></div>
+                                            <div class="user-email" th:text="${account.email}"></div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-4 py-3">
+                                    <span class="role-badge admin">ADMIN</span>
+                                </td>
+                                <td class="px-4 py-3 status-cell">
+                                    <span th:if="${account.isLocked}" class="status-badge locked">
+                                        <i class="bi bi-lock-fill me-1"></i>Bị khóa
+                                    </span>
+                                    <span th:unless="${account.isLocked}" class="status-badge active">
+                                        <i class="bi bi-check-circle-fill me-1"></i>Hoạt động
+                                    </span>
+                                </td>
+                                <td class="last-login px-4 py-3" th:text="${account.lastLoginAt != null ? #temporals.format(account.lastLoginAt, 'dd/MM/yyyy HH:mm') : '-'}"></td>
+                                <td class="text-end px-4 py-3">
+                                    <button class="btn btn-sm btn-outline-secondary more-btn" type="button" 
+                                            th:attr="data-account-id=${account.accountId}, data-account-username=${account.username}, data-account-email=${account.email}, data-account-locked=${account.isLocked}, data-account-role='ADMIN'"
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#accountActionModal">
+                                        <i class="bi bi-three-dots-vertical"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Staff Tab -->
+        <div class="tab-pane fade" id="staff" role="tabpanel">
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0 align-middle accounts-table">
+                            <thead>
+                            <tr>
+                                <th class="py-3 px-4">ID</th>
+                                <th class="py-3 px-4">Người dùng</th>
+                                <th class="py-3 px-4">Vai trò</th>
+                                <th class="py-3 px-4">Trạng thái</th>
+                                <th class="py-3 px-4">Login cuối</th>
+                                <th class="py-3 px-4 text-end">Thao tác</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:if="${#lists.isEmpty(staffAccounts)}">
+                                <td colspan="6" class="text-center py-5 text-muted">
+                                    <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                                    Chưa có nhân viên nào
+                                </td>
+                            </tr>
+                            <tr th:each="account : ${staffAccounts}">
+                                <td class="account-id px-4 py-3" th:text="'#' + ${account.accountId}"></td>
+                                <td class="px-4 py-3">
+                                    <div class="d-flex align-items-center">
+                                        <div class="user-avatar me-3">
+                                            <i class="bi bi-person-fill"></i>
+                                        </div>
+                                        <div>
+                                            <div class="user-name" th:text="${account.username}"></div>
+                                            <div class="user-email" th:text="${account.email}"></div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-4 py-3">
+                                    <span class="role-badge staff">STAFF</span>
+                                </td>
+                                <td class="px-4 py-3 status-cell">
+                                    <span th:if="${account.isLocked}" class="status-badge locked">
+                                        <i class="bi bi-lock-fill me-1"></i>Bị khóa
+                                    </span>
+                                    <span th:unless="${account.isLocked}" class="status-badge active">
+                                        <i class="bi bi-check-circle-fill me-1"></i>Hoạt động
+                                    </span>
+                                </td>
+                                <td class="last-login px-4 py-3" th:text="${account.lastLoginAt != null ? #temporals.format(account.lastLoginAt, 'dd/MM/yyyy HH:mm') : '-'}"></td>
+                                <td class="text-end px-4 py-3">
+                                    <button class="btn btn-sm btn-outline-secondary more-btn" type="button" 
+                                            th:attr="data-account-id=${account.accountId}, data-account-username=${account.username}, data-account-email=${account.email}, data-account-locked=${account.isLocked}, data-account-role='STAFF'"
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#accountActionModal">
+                                        <i class="bi bi-three-dots-vertical"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Customer Tab -->
+        <div class="tab-pane fade" id="customer" role="tabpanel">
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0 align-middle accounts-table">
+                            <thead>
+                            <tr>
+                                <th class="py-3 px-4">ID</th>
+                                <th class="py-3 px-4">Người dùng</th>
+                                <th class="py-3 px-4">Vai trò</th>
+                                <th class="py-3 px-4">Trạng thái</th>
+                                <th class="py-3 px-4">Số dư ví</th>
+                                <th class="py-3 px-4">Login cuối</th>
+                                <th class="py-3 px-4 text-end">Thao tác</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:if="${#lists.isEmpty(customerAccounts)}">
+                                <td colspan="7" class="text-center py-5 text-muted">
+                                    <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                                    Chưa có người dùng nào
+                                </td>
+                            </tr>
+                            <tr th:each="account : ${customerAccounts}">
+                                <td class="account-id px-4 py-3" th:text="'#' + ${account.accountId}"></td>
+                                <td class="px-4 py-3">
+                                    <div class="d-flex align-items-center">
+                                        <div class="user-avatar me-3">
+                                            <i class="bi bi-person-fill"></i>
+                                        </div>
+                                        <div>
+                                            <div class="user-name" th:text="${account.username}"></div>
+                                            <div class="user-email" th:text="${account.email}"></div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-4 py-3">
+                                    <span class="role-badge customer">CUSTOMER</span>
+                                </td>
+                                <td class="px-4 py-3 status-cell">
+                                    <span th:if="${account.isLocked}" class="status-badge locked">
+                                        <i class="bi bi-lock-fill me-1"></i>Bị khóa
+                                    </span>
+                                    <span th:unless="${account.isLocked}" class="status-badge active">
+                                        <i class="bi bi-check-circle-fill me-1"></i>Hoạt động
+                                    </span>
+                                </td>
+                                <td class="px-4 py-3 wallet-cell">
+                                    <span class="wallet-badge">
+                                        <i class="bi bi-wallet2 me-1"></i><span th:text="${#numbers.formatDecimal(account.walletBalance != null ? account.walletBalance : 0, 0, 'POINT', 0, 'POINT')}"></span> đ
+                                    </span>
+                                </td>
+                                <td class="last-login px-4 py-3" th:text="${account.lastLoginAt != null ? #temporals.format(account.lastLoginAt, 'dd/MM/yyyy HH:mm') : '-'}"></td>
+                                <td class="text-end px-4 py-3">
+                                    <button class="btn btn-sm btn-outline-secondary more-btn" type="button" 
+                                            th:attr="data-account-id=${account.accountId}, data-account-username=${account.username}, data-account-email=${account.email}, data-account-locked=${account.isLocked}, data-account-role='CUSTOMER'"
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#accountActionModal">
+                                        <i class="bi bi-three-dots-vertical"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </div>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+        </div>
+    </main>
+    
+    <!-- Modal Thao tác tài khoản -->
+    <div class="modal fade" id="accountActionModal" tabindex="-1" aria-labelledby="accountActionModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold" id="accountActionModalLabel">
+                        <i class="bi bi-three-dots-vertical me-2"></i>Thao tác tài khoản
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <div class="text-muted small mb-1">Tài khoản:</div>
+                        <div class="fw-bold" id="modalAccountUsername"></div>
+                        <div class="text-muted small" id="modalAccountEmail"></div>
+                        <div class="text-muted small mt-1">Vai trò: <span id="modalAccountRole"></span></div>
+                    </div>
+                    <hr>
+                    <div class="d-grid gap-2">
+                        <a id="modalAccountDetail" class="btn btn-outline-primary" href="#">
+                            <i class="bi bi-eye me-2"></i>Chi tiết
+                        </a>
+                        <a id="modalAccountRoles" class="btn btn-outline-secondary" href="#">
+                            <i class="bi bi-shield-lock me-2"></i>Phân quyền
+                        </a>
+                        <div id="customerActions" style="display: none;">
+                            <a id="modalAccountWallet" class="btn btn-outline-info" href="#">
+                                <i class="bi bi-wallet2 me-2"></i>Xem chi tiết ví
+                            </a>
+                            <a id="modalAccountDeposit" class="btn btn-outline-success" href="#">
+                                <i class="bi bi-plus-circle me-2"></i>Nạp tiền vào ví
+                            </a>
+                        </div>
+                        <hr>
+                        <form id="modalAccountToggleLock" method="post" class="d-inline">
+                            <button type="submit" class="btn w-100" id="modalToggleLockBtn">
+                                <i id="modalToggleLockIcon" class="me-2"></i>
+                                <span id="modalToggleLockText"></span>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script th:src="@{/js/admin-layout.js}"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const accountActionModal = document.getElementById('accountActionModal');
+            const modalAccountUsername = document.getElementById('modalAccountUsername');
+            const modalAccountEmail = document.getElementById('modalAccountEmail');
+            const modalAccountRole = document.getElementById('modalAccountRole');
+            const modalAccountDetail = document.getElementById('modalAccountDetail');
+            const modalAccountRoles = document.getElementById('modalAccountRoles');
+            const modalAccountWallet = document.getElementById('modalAccountWallet');
+            const modalAccountDeposit = document.getElementById('modalAccountDeposit');
+            const modalAccountToggleLock = document.getElementById('modalAccountToggleLock');
+            const modalToggleLockBtn = document.getElementById('modalToggleLockBtn');
+            const modalToggleLockIcon = document.getElementById('modalToggleLockIcon');
+            const modalToggleLockText = document.getElementById('modalToggleLockText');
+            const customerActions = document.getElementById('customerActions');
+            
+            // Xử lý khi modal được mở
+            accountActionModal.addEventListener('show.bs.modal', function(event) {
+                const button = event.relatedTarget;
+                const accountId = button.getAttribute('data-account-id');
+                const username = button.getAttribute('data-account-username');
+                const email = button.getAttribute('data-account-email');
+                const isLocked = button.getAttribute('data-account-locked') === 'true';
+                const role = button.getAttribute('data-account-role');
+                
+                // Cập nhật thông tin
+                modalAccountUsername.textContent = username;
+                modalAccountEmail.textContent = email;
+                modalAccountRole.textContent = role;
+                
+                // Cập nhật links
+                modalAccountDetail.href = '/admin/accounts/' + accountId;
+                modalAccountRoles.href = '/admin/accounts/' + accountId + '/roles';
+                modalAccountToggleLock.action = '/admin/accounts/' + accountId + '/toggle-lock';
+                
+                // Hiển thị/ẩn actions cho customer
+                if (role === 'CUSTOMER') {
+                    customerActions.style.display = 'block';
+                    modalAccountWallet.href = '/admin/accounts/' + accountId + '/wallet';
+                    modalAccountDeposit.href = '/admin/wallet/deposit?username=' + username;
+                } else {
+                    customerActions.style.display = 'none';
+                }
+                
+                // Cập nhật nút khóa/mở khóa
+                if (isLocked) {
+                    modalToggleLockBtn.className = 'btn btn-outline-success w-100';
+                    modalToggleLockIcon.className = 'bi bi-unlock me-2';
+                    modalToggleLockText.textContent = 'Mở khóa';
+                } else {
+                    modalToggleLockBtn.className = 'btn btn-outline-danger w-100';
+                    modalToggleLockIcon.className = 'bi bi-lock me-2';
+                    modalToggleLockText.textContent = 'Khóa';
+                }
+            });
+        });
+    </script>
 </body>
 </html>
 

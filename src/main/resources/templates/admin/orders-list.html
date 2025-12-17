@@ -8,84 +8,94 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <link th:href="@{/css/style.css}" rel="stylesheet">
+    <link th:href="@{/css/admin-layout.css}" rel="stylesheet">
+    <style>
+        .more-btn {
+            cursor: pointer;
+        }
+        /* Fix modal hiển thị ở giữa màn hình */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1055;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.5);
+        }
+        .modal.show {
+            display: flex !important;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal.fade .modal-dialog {
+            transition: transform 0.3s ease-out;
+            transform: translate(0, -50px);
+        }
+        .modal.show .modal-dialog {
+            transform: translate(0, 0);
+        }
+        .modal-dialog-centered {
+            display: flex;
+            align-items: center;
+            min-height: calc(100% - 1rem);
+            margin: 1rem auto;
+        }
+        .modal-dialog {
+            margin: auto;
+            position: relative;
+            width: auto;
+            max-width: 500px;
+            pointer-events: none;
+        }
+        .modal-content {
+            pointer-events: auto;
+        }
+    </style>
 </head>
-<body class="admin-page">
-    <div th:replace="~{fragments/navbar :: navbar}"></div>
-
-<div class="container mt-4 mb-5">
+<body class="admin-dashboard">
+    <div th:replace="~{fragments/admin-sidebar :: admin-sidebar}"></div>
+    
+    <main class="admin-main-content" id="mainContent">
+        <div th:replace="~{fragments/admin-header :: admin-header('Quản lý đơn hàng')}"></div>
+        
+        <div class="dashboard-content">
+<div class="container-fluid">
     <div th:if="${success}" class="alert alert-success border-0 shadow-sm"><i class="bi bi-check-circle me-2"></i><span th:text="${success}"></span></div>
     <div th:if="${error}" class="alert alert-danger border-0 shadow-sm"><i class="bi bi-exclamation-triangle me-2"></i><span th:text="${error}"></span></div>
 
-    <div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
-        <div>
-            <h2 class="fw-bold mb-1"><i class="bi bi-cart-check me-2"></i>Quản lý đơn hàng</h2>
-            <p class="mb-0 opacity-90">Xem danh sách đơn hàng và cập nhật trạng thái.</p>
-        </div>
-        <div>
-            <a href="/admin/dashboard" class="btn btn-light shadow-sm">
-                <i class="bi bi-arrow-left me-2"></i>Dashboard
-            </a>
-        </div>
+    <div class="d-flex justify-content-end align-items-center flex-wrap gap-2 mb-4">
+        <a href="javascript:history.back();" class="btn btn-outline-secondary fw-bold shadow-sm">
+            <i class="bi bi-arrow-left me-2"></i>Quay lại
+        </a>
     </div>
 
-    <!-- Quick Filter Buttons -->
+    <!-- Filter Dropdown -->
     <div class="card shadow-sm mb-4">
         <div class="card-body">
-            <div class="d-flex align-items-center mb-3">
-                <label class="form-label fw-bold mb-0 me-3">Lọc nhanh:</label>
-                <div class="btn-group flex-wrap" role="group">
-                    <a href="/admin/orders" 
-                       class="btn btn-outline-secondary" 
-                       th:classappend="${selectedStatus == null || selectedStatus == ''} ? 'active'">
-                        <i class="bi bi-list-ul me-1"></i>Tất cả
-                    </a>
-                    <a href="/admin/orders?status=PENDING" 
-                       class="btn btn-outline-secondary" 
-                       th:classappend="${selectedStatus == 'PENDING'} ? 'active'">
-                        <i class="bi bi-clock me-1"></i>Pending
-                    </a>
-                    <a href="/admin/orders?status=PROCESSING" 
-                       class="btn btn-outline-info" 
-                       th:classappend="${selectedStatus == 'PROCESSING'} ? 'active'">
-                        <i class="bi bi-gear me-1"></i>Processing
-                    </a>
-                    <a href="/admin/orders?status=SHIPPED" 
-                       class="btn btn-outline-primary" 
-                       th:classappend="${selectedStatus == 'SHIPPED'} ? 'active'">
-                        <i class="bi bi-truck me-1"></i>Shipped
-                    </a>
-                    <a href="/admin/orders?status=DELIVERED" 
-                       class="btn btn-outline-success" 
-                       th:classappend="${selectedStatus == 'DELIVERED'} ? 'active'">
-                        <i class="bi bi-check-circle me-1"></i>Delivered
-                    </a>
-                    <a href="/admin/orders?status=DONE" 
-                       class="btn btn-outline-success" 
-                       th:classappend="${selectedStatus == 'DONE'} ? 'active'">
-                        <i class="bi bi-check-circle-fill me-1"></i>Done
-                    </a>
-                    <a href="/admin/orders?status=CANCELLED" 
-                       class="btn btn-outline-danger" 
-                       th:classappend="${selectedStatus == 'CANCELLED'} ? 'active'">
-                        <i class="bi bi-x-circle me-1"></i>Cancelled
-                    </a>
-                </div>
-            </div>
-            <hr>
-            <form method="get" action="/admin/orders" class="row g-3">
+            <form method="get" action="/admin/orders" id="filterForm" class="row g-3">
                 <div class="col-md-6">
-                    <label for="status" class="form-label fw-bold">Hoặc chọn từ dropdown:</label>
-                    <select class="form-select" id="status" name="status" onchange="this.form.submit()">
+                    <label for="status" class="form-label fw-bold">Lọc theo trạng thái:</label>
+                    <select class="form-select" id="status" name="status">
                         <option value="">Tất cả đơn hàng</option>
-                        <option value="PENDING" th:selected="${selectedStatus == 'PENDING'}">PENDING - Chờ xử lý</option>
-                        <option value="PROCESSING" th:selected="${selectedStatus == 'PROCESSING'}">PROCESSING - Đang xử lý</option>
-                        <option value="SHIPPED" th:selected="${selectedStatus == 'SHIPPED'}">SHIPPED - Đã gửi hàng</option>
-                        <option value="DELIVERED" th:selected="${selectedStatus == 'DELIVERED'}">DELIVERED - Đã giao hàng</option>
-                        <option value="DONE" th:selected="${selectedStatus == 'DONE'}">DONE - Hoàn thành</option>
-                        <option value="CANCELLED" th:selected="${selectedStatus == 'CANCELLED'}">CANCELLED - Đã hủy</option>
+                        <option value="PENDING" th:selected="${selectedStatus == 'PENDING'}">Chờ xử lý</option>
+                        <option value="PENDING_CONFIRMATION" th:selected="${selectedStatus == 'PENDING_CONFIRMATION'}">Chờ xác nhận</option>
+                        <option value="PENDING_PAYMENT" th:selected="${selectedStatus == 'PENDING_PAYMENT'}">Chờ thanh toán</option>
+                        <option value="PAID" th:selected="${selectedStatus == 'PAID'}">Đã thanh toán</option>
+                        <option value="SCHEDULED" th:selected="${selectedStatus == 'SCHEDULED'}">Đã lên lịch</option>
+                        <option value="PROCESSING" th:selected="${selectedStatus == 'PROCESSING'}">Đang xử lý</option>
+                        <option value="SHIPPED" th:selected="${selectedStatus == 'SHIPPED'}">Đã gửi hàng</option>
+                        <option value="DELIVERED" th:selected="${selectedStatus == 'DELIVERED'}">Đã giao hàng</option>
+                        <option value="DONE" th:selected="${selectedStatus == 'DONE'}">Hoàn thành</option>
+                        <option value="CANCELLED" th:selected="${selectedStatus == 'CANCELLED'}">Đã hủy</option>
                     </select>
                 </div>
                 <div class="col-md-6 d-flex align-items-end gap-2">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-funnel me-2"></i>Lọc
+                    </button>
                     <a href="/admin/orders" class="btn btn-outline-secondary">
                         <i class="bi bi-x-circle me-2"></i>Xóa bộ lọc
                     </a>
@@ -117,25 +127,37 @@
                         <td>
                             <span th:switch="${order.status}">
                                 <span th:case="'PENDING'" class="badge bg-secondary">
-                                    <i class="bi bi-clock"></i> Pending
+                                    <i class="bi bi-clock"></i> Chờ xử lý
                                 </span>
                                 <span th:case="'PROCESSING'" class="badge bg-info">
-                                    <i class="bi bi-gear"></i> Processing
+                                    <i class="bi bi-gear"></i> Đang xử lý
                                 </span>
                                 <span th:case="'SHIPPED'" class="badge bg-primary">
-                                    <i class="bi bi-truck"></i> Shipped
+                                    <i class="bi bi-truck"></i> Đã gửi hàng
                                 </span>
                                 <span th:case="'DELIVERED'" class="badge bg-success">
-                                    <i class="bi bi-check-circle"></i> Delivered
+                                    <i class="bi bi-check-circle"></i> Đã giao hàng
                                 </span>
                                 <span th:case="'DONE'" class="badge bg-success">
-                                    <i class="bi bi-check-circle-fill"></i> Done
+                                    <i class="bi bi-check-circle-fill"></i> Hoàn thành
                                 </span>
                                 <span th:case="'CANCELLED'" class="badge bg-danger">
-                                    <i class="bi bi-x-circle"></i> Cancelled
+                                    <i class="bi bi-x-circle"></i> Đã hủy
+                                </span>
+                                <span th:case="'PENDING_CONFIRMATION'" class="badge bg-warning">
+                                    <i class="bi bi-hourglass-split"></i> Chờ xác nhận
+                                </span>
+                                <span th:case="'PENDING_PAYMENT'" class="badge bg-warning">
+                                    <i class="bi bi-credit-card"></i> Chờ thanh toán
+                                </span>
+                                <span th:case="'PAID'" class="badge bg-info">
+                                    <i class="bi bi-check-circle"></i> Đã thanh toán
+                                </span>
+                                <span th:case="'SCHEDULED'" class="badge bg-primary">
+                                    <i class="bi bi-calendar-check"></i> Đã lên lịch
                                 </span>
                                 <span th:case="*" class="badge bg-secondary">
-                                    <i class="bi bi-question-circle"></i> <span th:text="${order.status != null ? order.status : 'N/A'}"></span>
+                                    <i class="bi bi-question-circle"></i> Không xác định
                                 </span>
                             </span>
                         </td>
@@ -146,56 +168,14 @@
                             <small class="text-muted" th:text="${order.shippingAddress}"></small>
                         </td>
                         <td class="text-end">
-                            <div class="dropdown" th:if="${order.status != 'DONE' && order.status != 'CANCELLED'}">
-                                <button type="button" 
-                                        class="btn btn-sm btn-outline-primary dropdown-toggle" 
-                                        data-bs-toggle="dropdown" 
-                                        aria-expanded="false">
-                                    <i class="bi bi-pencil"></i> Chỉnh sửa
-                                </button>
-                                <ul class="dropdown-menu dropdown-menu-end">
-                                    <li>
-                                        <form th:action="@{/admin/orders/{id}/update-status(id=${order.orderId})}" 
-                                              method="post" 
-                                              onsubmit="return confirm('Bạn có chắc chắn muốn cập nhật đơn hàng này sang trạng thái PROCESSING?');">
-                                            <input type="hidden" name="status" value="PROCESSING">
-                                            <button type="submit" class="dropdown-item">
-                                                <i class="bi bi-gear me-2"></i>Processing
-                                            </button>
-                                        </form>
-                                    </li>
-                                    <li>
-                                        <form th:action="@{/admin/orders/{id}/update-status(id=${order.orderId})}" 
-                                              method="post" 
-                                              onsubmit="return confirm('Bạn có chắc chắn muốn cập nhật đơn hàng này sang trạng thái SHIPPED?');">
-                                            <input type="hidden" name="status" value="SHIPPED">
-                                            <button type="submit" class="dropdown-item">
-                                                <i class="bi bi-truck me-2"></i>Shipped
-                                            </button>
-                                        </form>
-                                    </li>
-                                    <li>
-                                        <form th:action="@{/admin/orders/{id}/update-status(id=${order.orderId})}" 
-                                              method="post" 
-                                              onsubmit="return confirm('Bạn có chắc chắn muốn cập nhật đơn hàng này sang trạng thái DELIVERED?');">
-                                            <input type="hidden" name="status" value="DELIVERED">
-                                            <button type="submit" class="dropdown-item">
-                                                <i class="bi bi-check-circle me-2"></i>Delivered
-                                            </button>
-                                        </form>
-                                    </li>
-                                    <li>
-                                        <form th:action="@{/admin/orders/{id}/update-status(id=${order.orderId})}" 
-                                              method="post" 
-                                              onsubmit="return confirm('Bạn có chắc chắn muốn cập nhật đơn hàng này sang trạng thái DONE?');">
-                                            <input type="hidden" name="status" value="DONE">
-                                            <button type="submit" class="dropdown-item">
-                                                <i class="bi bi-check-circle-fill me-2"></i>Done
-                                            </button>
-                                        </form>
-                                    </li>
-                                </ul>
-                            </div>
+                            <button th:if="${order.status != 'DONE' && order.status != 'CANCELLED'}" 
+                                    type="button" 
+                                    class="btn btn-sm btn-outline-primary more-btn" 
+                                    th:attr="data-order-id=${order.orderId}, data-order-number=${order.orderNumber}, data-order-status=${order.status}"
+                                    data-bs-toggle="modal" 
+                                    data-bs-target="#orderActionModal">
+                                <i class="bi bi-three-dots-vertical"></i>
+                            </button>
                             <span th:if="${order.status == 'DONE' || order.status == 'CANCELLED'}" 
                                   class="text-muted small">-</span>
                         </td>
@@ -212,25 +192,119 @@
         </div>
     </div>
 
-    <div class="mt-4">
-        <div class="alert alert-info d-flex align-items-start" role="alert">
-            <i class="bi bi-info-circle-fill me-2 mt-1"></i>
-            <div>
-                <strong>Lưu ý:</strong>
-                <ul class="mb-0 mt-2">
-                    <li><strong>PENDING:</strong> Đơn hàng mới được tạo, chờ xử lý</li>
-                    <li><strong>PROCESSING:</strong> Đơn hàng đang được xử lý</li>
-                    <li><strong>SHIPPED:</strong> Đơn hàng đã được gửi đi</li>
-                    <li><strong>DELIVERED:</strong> Đơn hàng đã được giao đến khách hàng</li>
-                    <li><strong>DONE:</strong> Đơn hàng đã hoàn thành</li>
-                    <li><strong>CANCELLED:</strong> Đơn hàng đã bị hủy</li>
-                </ul>
+</div>
+
+    <!-- Modal Thao tác đơn hàng -->
+    <div class="modal fade" id="orderActionModal" tabindex="-1" aria-labelledby="orderActionModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold" id="orderActionModalLabel">
+                        <i class="bi bi-three-dots-vertical me-2"></i>Cập nhật trạng thái đơn hàng
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <div class="text-muted small mb-1">Mã đơn hàng:</div>
+                        <div class="fw-bold" id="modalOrderNumber"></div>
+                        <div class="text-muted small mt-1">Trạng thái hiện tại: <span id="modalCurrentStatus"></span></div>
+                    </div>
+                    <hr>
+                    <div class="d-grid gap-2">
+                        <form id="modalProcessingForm" method="post" class="d-inline">
+                            <input type="hidden" name="status" value="PROCESSING">
+                            <button type="submit" class="btn btn-outline-info w-100" 
+                                    onclick="return confirm('Bạn có chắc chắn muốn cập nhật đơn hàng này sang trạng thái Đang xử lý?');">
+                                <i class="bi bi-gear me-2"></i>Đang xử lý
+                            </button>
+                        </form>
+                        <form id="modalShippedForm" method="post" class="d-inline">
+                            <input type="hidden" name="status" value="SHIPPED">
+                            <button type="submit" class="btn btn-outline-primary w-100" 
+                                    onclick="return confirm('Bạn có chắc chắn muốn cập nhật đơn hàng này sang trạng thái Đã gửi hàng?');">
+                                <i class="bi bi-truck me-2"></i>Đã gửi hàng
+                            </button>
+                        </form>
+                        <form id="modalDeliveredForm" method="post" class="d-inline">
+                            <input type="hidden" name="status" value="DELIVERED">
+                            <button type="submit" class="btn btn-outline-success w-100" 
+                                    onclick="return confirm('Bạn có chắc chắn muốn cập nhật đơn hàng này sang trạng thái Đã giao hàng?');">
+                                <i class="bi bi-check-circle me-2"></i>Đã giao hàng
+                            </button>
+                        </form>
+                        <form id="modalDoneForm" method="post" class="d-inline">
+                            <input type="hidden" name="status" value="DONE">
+                            <button type="submit" class="btn btn-outline-success w-100" 
+                                    onclick="return confirm('Bạn có chắc chắn muốn cập nhật đơn hàng này sang trạng thái Hoàn thành?');">
+                                <i class="bi bi-check-circle-fill me-2"></i>Hoàn thành
+                            </button>
+                        </form>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
-</div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Xử lý submit form khi thay đổi dropdown
+        const statusSelect = document.getElementById('status');
+        const filterForm = document.getElementById('filterForm');
+        if (statusSelect && filterForm) {
+            statusSelect.addEventListener('change', function() {
+                filterForm.submit();
+            });
+        }
+        
+        const orderActionModal = document.getElementById('orderActionModal');
+        const modalOrderNumber = document.getElementById('modalOrderNumber');
+        const modalCurrentStatus = document.getElementById('modalCurrentStatus');
+        const modalProcessingForm = document.getElementById('modalProcessingForm');
+        const modalShippedForm = document.getElementById('modalShippedForm');
+        const modalDeliveredForm = document.getElementById('modalDeliveredForm');
+        const modalDoneForm = document.getElementById('modalDoneForm');
+        
+        // Map trạng thái sang tiếng Việt
+        const statusMap = {
+            'PENDING': 'Chờ xử lý',
+            'PROCESSING': 'Đang xử lý',
+            'SHIPPED': 'Đã gửi hàng',
+            'DELIVERED': 'Đã giao hàng',
+            'DONE': 'Hoàn thành',
+            'CANCELLED': 'Đã hủy',
+            'PENDING_CONFIRMATION': 'Chờ xác nhận',
+            'PENDING_PAYMENT': 'Chờ thanh toán',
+            'PAID': 'Đã thanh toán',
+            'SCHEDULED': 'Đã lên lịch'
+        };
+        
+        // Xử lý khi modal được mở
+        if (orderActionModal) {
+            orderActionModal.addEventListener('show.bs.modal', function(event) {
+                // Lấy button đã trigger modal
+                const button = event.relatedTarget;
+                
+                // Lấy thông tin từ data attributes
+                const orderId = button.getAttribute('data-order-id');
+                const orderNumber = button.getAttribute('data-order-number');
+                const currentStatus = button.getAttribute('data-order-status');
+                
+                // Cập nhật thông tin trong modal
+                modalOrderNumber.textContent = orderNumber;
+                modalCurrentStatus.textContent = statusMap[currentStatus] || currentStatus;
+                
+                // Cập nhật các form với orderId tương ứng
+                modalProcessingForm.action = '/admin/orders/' + orderId + '/update-status';
+                modalShippedForm.action = '/admin/orders/' + orderId + '/update-status';
+                modalDeliveredForm.action = '/admin/orders/' + orderId + '/update-status';
+                modalDoneForm.action = '/admin/orders/' + orderId + '/update-status';
+            });
+        }
+    });
+</script>
 </body>
 </html>
+
 

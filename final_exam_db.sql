@@ -1,4 +1,7 @@
-CREATE DATABASE final_exam_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+-- AdminDemo database schema and seed
+-- Base schema and data
+
+CREATE DATABASE IF NOT EXISTS final_exam_db;
 USE final_exam_db;
 -- Roles
 CREATE TABLE Roles (
@@ -329,18 +332,13 @@ CREATE INDEX idx_orders_createdAt ON Orders(createdAt);
 CREATE INDEX idx_orderitems_itemid ON OrderItems(itemId);
 CREATE INDEX idx_stockitems_itemid ON StockItems(itemId);
 
--- =========================
--- SAMPLE DATA (SEED)
--- =========================
-
--- 1) ROLES
+-- ================= Seed data =================
 INSERT INTO Roles (roleCode, roleName, description, createdBy)
 VALUES
 ('ADMIN','Administrator','System administrator','seed'),
 ('STAFF','Staff','Operational staff','seed'),
 ('CUSTOMER','Customer','End user / buyer','seed');
 
--- 2) ACCOUNTS (passwordHash placeholders - replace with real hashes)
 INSERT INTO Accounts (username, passwordHash, email, isActive, isLocked, createdBy)
 VALUES
 ('admin', '$2y$10$ADMIN_HASH_PLACEHOLDER', 'admin@example.com', 1, 0, 'seed'),
@@ -348,7 +346,6 @@ VALUES
 ('customer1', '$2y$10$CUST1_HASH_PLACEHOLDER', 'cust1@example.com',1,0,'seed'),
 ('customer2', '$2y$10$CUST2_HASH_PLACEHOLDER', 'cust2@example.com',1,0,'seed');
 
--- 3) ACCOUNT PROFILES (1-1)
 INSERT INTO AccountProfiles (accountId, fullName, phoneNumber, addressLine, city, country, dateOfBirth, createdBy)
 VALUES
 ((SELECT accountId FROM Accounts WHERE username='admin'), 'Nguyen Admin', '0123456789', '1 Admin St', 'Ho Chi Minh', 'Vietnam', '1990-01-01', 'seed'),
@@ -356,7 +353,6 @@ VALUES
 ((SELECT accountId FROM Accounts WHERE username='customer1'), 'Tran Customer', '0912345678', '10 Customer Ln', 'Ho Chi Minh', 'Vietnam', '1998-03-03', 'seed'),
 ((SELECT accountId FROM Accounts WHERE username='customer2'), 'Pham Buyer', '0909876543', '20 Buyer Blvd', 'Ho Chi Minh', 'Vietnam', '2000-04-04', 'seed');
 
--- 4) ACCOUNT ROLES
 INSERT INTO AccountRoles (accountId, roleId)
 VALUES
 ((SELECT accountId FROM Accounts WHERE username='admin'), (SELECT roleId FROM Roles WHERE roleCode='ADMIN')),
@@ -364,14 +360,12 @@ VALUES
 ((SELECT accountId FROM Accounts WHERE username='customer1'), (SELECT roleId FROM Roles WHERE roleCode='CUSTOMER')),
 ((SELECT accountId FROM Accounts WHERE username='customer2'), (SELECT roleId FROM Roles WHERE roleCode='CUSTOMER'));
 
--- 5) CATEGORIES
 INSERT INTO Categories (categoryCode, categoryName, description, createdBy)
 VALUES
 ('CAT-APPAREL','Apparel & Fashion','Quần áo & phụ kiện','seed'),
 ('CAT-ELECTRONICS','Electronics','Thiết bị điện tử','seed'),
 ('CAT-ACCESS','Accessories','Phụ kiện & đồ dùng','seed');
 
--- 6) ITEMS (10 sample)
 INSERT INTO Items (categoryId, sku, itemName, itemType, unitName, unitPrice, weightKg, description, isActive, createdBy)
 VALUES
 ((SELECT categoryId FROM Categories WHERE categoryCode='CAT-APPAREL'),'SKU-001','Áo Thun Cotton Trơn','PRODUCT','Cái',129000.00,0.25,'Áo thun cotton co giãn','1','seed'),
@@ -385,13 +379,11 @@ VALUES
 ((SELECT categoryId FROM Categories WHERE categoryCode='CAT-ELECTRONICS'),'SKU-009','Chuột Gaming 7200DPI','PRODUCT','Cái',240000.00,0.20,'Chuột gaming','1','seed'),
 ((SELECT categoryId FROM Categories WHERE categoryCode='CAT-ACCESS'),'SKU-010','Dịch Vụ Vệ Sinh Laptop','SERVICE','Lần',120000.00,NULL,'Dịch vụ vệ sinh laptop','1','seed');
 
--- 7) WAREHOUSES
 INSERT INTO Warehouses (warehouseCode, warehouseName, addressLine, city, country, createdBy)
 VALUES
 ('WH-01','Kho Chính','100 Tran Hung Dao','Ho Chi Minh','Vietnam','seed'),
 ('WH-02','Kho Dự Trữ','200 Le Lai','Ho Chi Minh','Vietnam','seed');
 
--- 8) STOCKITEMS (set stock for most products in WH-01)
 INSERT INTO StockItems (warehouseId, itemId, quantityOnHand, quantityReserved, lowStockThreshold, createdBy)
 VALUES
 ((SELECT warehouseId FROM Warehouses WHERE warehouseCode='WH-01'), (SELECT itemId FROM Items WHERE sku='SKU-001'), 120, 0, 10, 'seed'),
@@ -404,27 +396,23 @@ VALUES
 ((SELECT warehouseId FROM Warehouses WHERE warehouseCode='WH-01'), (SELECT itemId FROM Items WHERE sku='SKU-008'), 25, 0, 5, 'seed'),
 ((SELECT warehouseId FROM Warehouses WHERE warehouseCode='WH-01'), (SELECT itemId FROM Items WHERE sku='SKU-009'), 90, 0, 10, 'seed');
 
--- 9) CART for customer1 and customer2
 INSERT INTO Carts (customerId, status, createdBy)
 VALUES
 ((SELECT accountId FROM Accounts WHERE username='customer1'),'CART','seed'),
 ((SELECT accountId FROM Accounts WHERE username='customer2'),'CART','seed');
 
--- 10) CART ITEMS (customer1 added 2 items, customer2 1 item)
 INSERT INTO CartItems (cartId, itemId, quantity, unitPrice, discountAmount, createdBy)
 VALUES
 ((SELECT cartId FROM Carts WHERE customerId=(SELECT accountId FROM Accounts WHERE username='customer1') LIMIT 1), (SELECT itemId FROM Items WHERE sku='SKU-001'), 2, 129000.00, 0.00, 'seed'),
 ((SELECT cartId FROM Carts WHERE customerId=(SELECT accountId FROM Accounts WHERE username='customer1') LIMIT 1), (SELECT itemId FROM Items WHERE sku='SKU-009'), 1, 240000.00, 0.00, 'seed'),
 ((SELECT cartId FROM Carts WHERE customerId=(SELECT accountId FROM Accounts WHERE username='customer2') LIMIT 1), (SELECT itemId FROM Items WHERE sku='SKU-006'), 1, 159000.00, 0.00, 'seed');
 
--- 11) ORDERS (create 3 sample orders: one paid, one pending, one service appointment)
 INSERT INTO Orders (customerId, cartId, orderNumber, status, shippingAddress, billingAddress, subtotal, discountTotal, taxAmount, shippingFee, codFee, gatewayFee, grandTotal, amountDue, createdBy)
 VALUES
 ((SELECT accountId FROM Accounts WHERE username='customer1'), (SELECT cartId FROM Carts WHERE customerId=(SELECT accountId FROM Accounts WHERE username='customer1') LIMIT 1), 'ORD-2025001', 'PAID', '10 Customer Ln', '10 Customer Ln',  (129000.00*2 + 240000.00), 0.00, 0.00, 30000.00, 0.00, 0.00, (129000.00*2 + 240000.00 + 30000.00), 0.00, 'seed'),
 ((SELECT accountId FROM Accounts WHERE username='customer2'), (SELECT cartId FROM Carts WHERE customerId=(SELECT accountId FROM Accounts WHERE username='customer2') LIMIT 1), 'ORD-2025002', 'PENDING_PAYMENT', '20 Buyer Blvd', '20 Buyer Blvd', 159000.00, 0.00, 0.00, 0.00, 0.00, 0.00, 159000.00, 159000.00, 'seed'),
 ((SELECT accountId FROM Accounts WHERE username='customer1'), NULL, 'ORD-2025003', 'SCHEDULED', '10 Customer Ln', '10 Customer Ln', 120000.00,0.00,0.00,0.00,0.00,0.00,120000.00,120000.00,'seed');
 
--- 12) ORDER ITEMS (link to above orders)
 INSERT INTO OrderItems (orderId, itemId, quantity, unitPrice, discountAmount, lineTotal, createdBy)
 VALUES
 ((SELECT orderId FROM Orders WHERE orderNumber='ORD-2025001'), (SELECT itemId FROM Items WHERE sku='SKU-001'), 2, 129000.00, 0.00, 258000.00, 'seed'),
@@ -432,65 +420,54 @@ VALUES
 ((SELECT orderId FROM Orders WHERE orderNumber='ORD-2025002'), (SELECT itemId FROM Items WHERE sku='SKU-006'), 1, 159000.00, 0.00, 159000.00, 'seed'),
 ((SELECT orderId FROM Orders WHERE orderNumber='ORD-2025003'), (SELECT itemId FROM Items WHERE sku='SKU-010'), 1, 120000.00, 0.00, 120000.00, 'seed');
 
--- 13) SHIPMENTS (for order ORD-2025001)
 INSERT INTO Shipments (orderId, trackingNumber, carrier, status, shippedAt, createdBy)
 VALUES
 ((SELECT orderId FROM Orders WHERE orderNumber='ORD-2025001'), 'TRK2025001', 'GiaoHangNhanh', 'SHIPPED', NOW(), 'seed');
 
--- 14) APPOINTMENTS (for service order ORD-2025003)
 INSERT INTO Appointments (orderId, scheduledAt, location, status, createdBy)
 VALUES
 ((SELECT orderId FROM Orders WHERE orderNumber='ORD-2025003'), DATE_ADD(NOW(), INTERVAL 3 DAY), 'Cửa hàng 1', 'SCHEDULED', 'seed');
 
--- 15) PAYMENTS (one payment for ORD-2025001, one pending for ORD-2025002)
 INSERT INTO Payments (orderId, paymentMethod, amount, status, paidAt, transactionRef, createdBy)
 VALUES
 ((SELECT orderId FROM Orders WHERE orderNumber='ORD-2025001'), 'GATEWAY', (SELECT grandTotal FROM Orders WHERE orderNumber='ORD-2025001'), 'COMPLETED', NOW(), 'TXN-2025001', 'seed'),
 ((SELECT orderId FROM Orders WHERE orderNumber='ORD-2025002'), 'COD', (SELECT grandTotal FROM Orders WHERE orderNumber='ORD-2025002'), 'PENDING', NULL, NULL, 'seed');
 
--- 16) WALLETS (for customer1)
 INSERT INTO Wallets (accountId, balance, createdBy)
 VALUES
 ((SELECT accountId FROM Accounts WHERE username='customer1'), 500000.00, 'seed'),
 ((SELECT accountId FROM Accounts WHERE username='customer2'), 100000.00, 'seed');
 
--- 17) WALLET TRANSACTIONS (topup and payment)
 INSERT INTO WalletTransactions (walletId, paymentId, transactionType, amount, description, createdBy)
 VALUES
 ((SELECT walletId FROM Wallets WHERE accountId=(SELECT accountId FROM Accounts WHERE username='customer1')), NULL, 'TOPUP', 500000.00, 'Initial top-up', 'seed'),
 ((SELECT walletId FROM Wallets WHERE accountId=(SELECT accountId FROM Accounts WHERE username='customer1')), (SELECT paymentId FROM Payments WHERE orderId=(SELECT orderId FROM Orders WHERE orderNumber='ORD-2025001')), 'PAYMENT', (SELECT amount FROM Payments WHERE orderId=(SELECT orderId FROM Orders WHERE orderNumber='ORD-2025001')), 'Pay order ORD-2025001', 'seed');
 
--- 18) REFUNDS (example: refund request for ORD-2025001 - partial)
 INSERT INTO Refunds (orderId, paymentId, refundAmount, reason, status, requestedAt, createdBy)
 VALUES
 ((SELECT orderId FROM Orders WHERE orderNumber='ORD-2025001'), (SELECT paymentId FROM Payments WHERE orderId=(SELECT orderId FROM Orders WHERE orderNumber='ORD-2025001')), 50000.00, 'Item damaged', 'REQUESTED', NOW(), 'seed');
 
--- 19) PROMOTIONS
 INSERT INTO Promotions (promotionCode, promotionName, description, discountLevel, discountType, discountValue, maxUsesTotal, maxUsesPerUser, minOrderAmount, startDate, endDate, isActive, createdBy)
 VALUES
 ('PROMO10','10% Off Cart','10% off on entire cart','CART','PERCENT',10.00,1000,1,100000.00, DATE_SUB(NOW(), INTERVAL 30 DAY), DATE_ADD(NOW(), INTERVAL 30 DAY),1,'seed'),
 ('ITEM50','50K Off Item','50k off specific item','ITEM','AMOUNT',50000.00,500,1,50000.00, DATE_SUB(NOW(), INTERVAL 10 DAY), DATE_ADD(NOW(), INTERVAL 20 DAY),1,'seed');
 
--- 20) PROMOTION ITEMS (apply ITEM50 to SKU-004 and SKU-008)
 INSERT INTO PromotionItems (promotionId, itemId)
 VALUES
 ((SELECT promotionId FROM Promotions WHERE promotionCode='ITEM50'), (SELECT itemId FROM Items WHERE sku='SKU-004')),
 ((SELECT promotionId FROM Promotions WHERE promotionCode='ITEM50'), (SELECT itemId FROM Items WHERE sku='SKU-008'));
 
--- 21) PROMOTION USAGES (example usages)
 INSERT INTO PromotionUsages (promotionId, orderId, accountId, discountAmount, createdBy)
 VALUES
 ((SELECT promotionId FROM Promotions WHERE promotionCode='PROMO10'), (SELECT orderId FROM Orders WHERE orderNumber='ORD-2025002'), (SELECT accountId FROM Accounts WHERE username='customer2'), 15900.00, 'seed'),
 ((SELECT promotionId FROM Promotions WHERE promotionCode='ITEM50'), (SELECT orderId FROM Orders WHERE orderNumber='ORD-2025001'), (SELECT accountId FROM Accounts WHERE username='customer1'), 50000.00, 'seed');
 
--- 22) UPDATE stock quantities to reflect placed orders (decrease OnHand)
 UPDATE StockItems s
 JOIN OrderItems oi ON s.itemId = oi.itemId
 JOIN Orders o ON oi.orderId = o.orderId
 SET s.quantityOnHand = GREATEST(0, s.quantityOnHand - oi.quantity)
 WHERE o.orderNumber IN ('ORD-2025001','ORD-2025002','ORD-2025003');
 
--- 23) OPTIONAL: mark updatedBy fields for seed provenance
 UPDATE Accounts SET updatedBy='seed' WHERE username IN ('admin','staff1','customer1','customer2');
 UPDATE Items SET updatedBy='seed';
 UPDATE Orders SET updatedBy='seed';
@@ -500,14 +477,81 @@ ALTER TABLE Accounts
 MODIFY COLUMN createdAt DATETIME NULL,
 MODIFY COLUMN updatedAt DATETIME NULL;
 
--- Update existing rows with NULL audit fields to have current timestamp
 UPDATE Accounts 
 SET createdAt = COALESCE(createdAt, NOW()),
     updatedAt = COALESCE(updatedAt, NOW())
 WHERE createdAt IS NULL OR updatedAt IS NULL;
 
--- If you want to make them NOT NULL after updating data, uncomment below:
--- ALTER TABLE Accounts 
--- MODIFY COLUMN createdAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
--- MODIFY COLUMN updatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP;
+-- ============== Extra test data for refund demo (from create_test_order_for_refund.sql) ==============
+USE final_exam_db;
 
+INSERT INTO Orders (customerId, cartId, orderNumber, status, shippingAddress, billingAddress, 
+                    subtotal, discountTotal, taxAmount, shippingFee, codFee, gatewayFee, 
+                    grandTotal, amountDue, createdAt, createdBy)
+VALUES
+((SELECT accountId FROM Accounts WHERE username='customer1'), 
+ NULL, 
+ 'ORD-2025004', 
+ 'PAID', 
+ '123 Test Street, Ho Chi Minh City', 
+ '123 Test Street, Ho Chi Minh City',
+ 250000.00,  
+ 0.00,       
+ 0.00,       
+ 30000.00,   
+ 0.00,       
+ 0.00,       
+ 280000.00,  
+ 0.00,       
+ NOW(), 
+ 'test');
+
+INSERT INTO OrderItems (orderId, itemId, quantity, unitPrice, discountAmount, lineTotal, createdBy)
+VALUES
+((SELECT orderId FROM Orders WHERE orderNumber='ORD-2025004'), 
+ (SELECT itemId FROM Items WHERE sku='SKU-001'), 
+ 1, 
+ 129000.00, 
+ 0.00, 
+ 129000.00, 
+ 'test'),
+((SELECT orderId FROM Orders WHERE orderNumber='ORD-2025004'), 
+ (SELECT itemId FROM Items WHERE sku='SKU-006'), 
+ 1, 
+ 159000.00, 
+ 0.00, 
+ 159000.00, 
+ 'test');
+
+INSERT INTO Payments (orderId, paymentMethod, amount, status, paidAt, transactionRef, createdBy)
+VALUES
+((SELECT orderId FROM Orders WHERE orderNumber='ORD-2025004'), 
+ 'GATEWAY', 
+ 280000.00, 
+ 'COMPLETED', 
+ NOW(), 
+ 'TXN-2025004', 
+ 'test');
+
+INSERT INTO Refunds (orderId, paymentId, refundAmount, reason, status, requestedAt, createdBy)
+VALUES
+((SELECT orderId FROM Orders WHERE orderNumber='ORD-2025004'), 
+ (SELECT paymentId FROM Payments WHERE orderId=(SELECT orderId FROM Orders WHERE orderNumber='ORD-2025004')), 
+ 100000.00,  
+ 'Sản phẩm không đúng mô tả, muốn hoàn tiền một phần',  
+ 'REQUESTED',  
+ NOW(), 
+ 'test');
+
+SELECT 
+    o.orderNumber,
+    o.status as orderStatus,
+    o.grandTotal,
+    r.refundId,
+    r.refundAmount,
+    r.reason,
+    r.status as refundStatus,
+    r.requestedAt
+FROM Orders o
+LEFT JOIN Refunds r ON o.orderId = r.orderId
+WHERE o.orderNumber = 'ORD-2025004';

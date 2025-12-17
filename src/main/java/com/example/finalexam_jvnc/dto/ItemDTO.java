@@ -22,4 +22,5 @@ public class ItemDTO {
     private String description;
     private String imageUrl;
     private Boolean isActive;
+    private Boolean hasImage;
 }

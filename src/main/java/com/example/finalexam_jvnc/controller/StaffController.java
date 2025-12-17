@@ -2,6 +2,7 @@ package com.example.finalexam_jvnc.controller;
 
 import com.example.finalexam_jvnc.dto.ItemDTO;
 import com.example.finalexam_jvnc.dto.OrderDTO;
+import com.example.finalexam_jvnc.dto.ShipmentDTO;
 import com.example.finalexam_jvnc.dto.StockItemDTO;
 import com.example.finalexam_jvnc.dto.WarehouseDTO;
 import com.example.finalexam_jvnc.service.AccountService;
@@ -354,7 +355,7 @@ public class StaffController {
         return "staff/orders-list";
     }
 
-    // Update Order Status
+    // Update Order Status (Staff can only update to PROCESSING or PACKED)
     @PostMapping("/orders/{id}/update-status")
     public String updateOrderStatus(@PathVariable Long id,
             @RequestParam String status,
@@ -363,6 +364,14 @@ public class StaffController {
         String staffUsername = (String) session.getAttribute("staffUsername");
         if (staffUsername == null || !accountService.isStaff(staffUsername)) {
             return "redirect:/login";
+        }
+
+        // Staff can only update order status to PROCESSING or PACKED
+        List<String> allowedStatuses = List.of("PROCESSING", "PACKED");
+        if (!allowedStatuses.contains(status)) {
+            redirectAttributes.addFlashAttribute("error",
+                    "Staff chỉ có thể cập nhật trạng thái đơn hàng sang PROCESSING hoặc PACKED!");
+            return "redirect:/staff/orders";
         }
 
         try {
@@ -446,6 +455,36 @@ public class StaffController {
         model.addAttribute("selectedStatus", status);
         model.addAttribute("staffUsername", staffUsername);
         return "staff/refunds-list";
+    }
+
+    // View Shipments List for Staff
+    @GetMapping("/shipments")
+    public String listShipments(HttpSession session,
+            Model model,
+            @RequestParam(required = false) String status) {
+        String staffUsername = (String) session.getAttribute("staffUsername");
+        if (staffUsername == null || !accountService.isStaff(staffUsername)) {
+            return "redirect:/login";
+        }
+
+        List<ShipmentDTO> shipments;
+
+        // Filter by status if provided
+        if (status != null && !status.isEmpty()) {
+            shipments = shipmentService.getShipmentsByStatus(status);
+        } else {
+            shipments = shipmentService.getAllShipments();
+        }
+
+        // Define available statuses
+        List<String> availableStatuses = List.of(
+                "PENDING", "SHIPPED", "IN_TRANSIT", "DELIVERED", "CANCELLED");
+
+        model.addAttribute("shipments", shipments);
+        model.addAttribute("availableStatuses", availableStatuses);
+        model.addAttribute("selectedStatus", status);
+        model.addAttribute("staffUsername", staffUsername);
+        return "staff/shipments-list";
     }
 
     // Approve Refund
@@ -534,6 +573,7 @@ public class StaffController {
         return switch (status) {
             case "PENDING" -> "Chờ xử lý";
             case "PROCESSING" -> "Đang xử lý";
+            case "PACKED" -> "Đã đóng gói";
             case "SHIPPED" -> "Đã gửi hàng";
             case "DELIVERED" -> "Đã giao hàng";
             case "DONE" -> "Hoàn thành";

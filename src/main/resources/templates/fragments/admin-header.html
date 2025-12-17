@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+    <header th:fragment="admin-header(title)" class="admin-header">
+        <h1 class="admin-header-title" th:text="${title != null ? title : 'Admin'}">Admin</h1>
+        <div class="admin-header-right">
+            <div class="text-end">
+                <div class="h5 mb-0"><i class="bi bi-clock"></i> <span id="clock">00:00</span></div>
+                <small class="text-muted" id="date">Thứ Hai, 20/11/2023</small>
+            </div>
+            <div class="admin-user-info">
+                <div class="admin-user-avatar">
+                    <i class="bi bi-person-fill"></i>
+                </div>
+                <div>
+                    <div class="fw-bold" th:text="${adminUsername != null ? adminUsername : 'Admin'}">Admin</div>
+                    <small class="text-muted">Quản trị viên</small>
+                </div>
+            </div>
+        </div>
+    </header>
+</body>
+</html>
+

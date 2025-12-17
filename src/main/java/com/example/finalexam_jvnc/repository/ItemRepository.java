@@ -20,8 +20,12 @@ public interface ItemRepository extends JpaRepository<Item, Long> {
     List<Item> findAllWithCategory();
 
     @Query("SELECT i FROM Item i WHERE i.isActive = true " +
-            "AND (:keyword IS NULL OR i.itemName LIKE CONCAT('%', :keyword, '%') OR i.description LIKE CONCAT('%', :keyword, '%')) "
-            +
+            "AND (:keyword IS NULL OR i.itemName LIKE CONCAT('%', :keyword, '%') OR i.description LIKE CONCAT('%', :keyword, '%')) " +
             "AND (:categoryId IS NULL OR i.category.categoryId = :categoryId)")
     List<Item> searchActiveItems(String keyword, Long categoryId);
+    
+    @Query("SELECT i FROM Item i LEFT JOIN FETCH i.category " +
+            "WHERE (:keyword IS NULL OR :keyword = '' OR i.itemName LIKE CONCAT('%', :keyword, '%') OR i.sku LIKE CONCAT('%', :keyword, '%') OR i.description LIKE CONCAT('%', :keyword, '%')) " +
+            "AND (:categoryId IS NULL OR i.category.categoryId = :categoryId)")
+    List<Item> searchAllItems(String keyword, Long categoryId);
 }

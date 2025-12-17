@@ -28,6 +28,19 @@ public class AuthController {
     public String login(@ModelAttribute AdminLoginDTO loginDTO,
                        HttpSession session,
                        RedirectAttributes redirectAttributes) {
+        // Check if account exists and is locked
+        com.example.finalexam_jvnc.model.Account account = accountService.getAccountByUsername(loginDTO.getUsername());
+        
+        if (account != null && Boolean.TRUE.equals(account.getIsLocked())) {
+            redirectAttributes.addFlashAttribute("error", "Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên để được hỗ trợ.");
+            return "redirect:/login";
+        }
+        
+        if (account != null && !Boolean.TRUE.equals(account.getIsActive())) {
+            redirectAttributes.addFlashAttribute("error", "Tài khoản của bạn đã bị vô hiệu hóa. Vui lòng liên hệ quản trị viên để được hỗ trợ.");
+            return "redirect:/login";
+        }
+
         // Validate credentials
         boolean isValid = accountService.validateCredentials(
             loginDTO.getUsername(),
@@ -35,7 +48,7 @@ public class AuthController {
         );
 
         if (!isValid) {
-            redirectAttributes.addFlashAttribute("error", "Invalid username or password");
+            redirectAttributes.addFlashAttribute("error", "Tên đăng nhập hoặc mật khẩu không đúng");
             return "redirect:/login";
         }
 
@@ -43,7 +56,7 @@ public class AuthController {
         String role = accountService.getUserRole(loginDTO.getUsername());
         
         if (role == null) {
-            redirectAttributes.addFlashAttribute("error", "User has no assigned role");
+            redirectAttributes.addFlashAttribute("error", "Người dùng chưa được phân quyền");
             return "redirect:/login";
         }
 
@@ -51,6 +64,7 @@ public class AuthController {
         accountService.updateLastLoginAt(loginDTO.getUsername());
 
         // Set session attributes based on role
+        // Note: serverInstanceId will be set automatically by SessionValidationFilter
         if ("ADMIN".equals(role)) {
             session.setAttribute("adminUsername", loginDTO.getUsername());
             session.setAttribute("userRole", "ADMIN");
@@ -65,7 +79,7 @@ public class AuthController {
             return "redirect:/customer/dashboard";
         }
 
-        redirectAttributes.addFlashAttribute("error", "Unknown role");
+        redirectAttributes.addFlashAttribute("error", "Vai trò không xác định");
         return "redirect:/login";
     }
 
@@ -84,33 +98,43 @@ public class AuthController {
                           RedirectAttributes redirectAttributes) {
         // Validate password confirmation
         if (!password.equals(confirmPassword)) {
-            redirectAttributes.addFlashAttribute("error", "Passwords do not match");
+            redirectAttributes.addFlashAttribute("error", "Mật khẩu xác nhận không khớp");
             return "redirect:/register";
         }
 
         // Validate password length
         if (password.length() < 6) {
-            redirectAttributes.addFlashAttribute("error", "Password must be at least 6 characters");
+            redirectAttributes.addFlashAttribute("error", "Mật khẩu phải có ít nhất 6 ký tự");
             return "redirect:/register";
         }
 
         try {
             accountService.registerCustomer(username, email, password);
-            redirectAttributes.addFlashAttribute("success", "Registration successful! Please login.");
+            redirectAttributes.addFlashAttribute("success", "Đăng ký tài khoản thành công! Vui lòng đăng nhập để tiếp tục.");
             return "redirect:/login";
         } catch (IllegalArgumentException e) {
             redirectAttributes.addFlashAttribute("error", e.getMessage());
             return "redirect:/register";
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("error", "Registration failed: " + e.getMessage());
+            redirectAttributes.addFlashAttribute("error", "Đăng ký thất bại: " + e.getMessage());
             return "redirect:/register";
         }
     }
 
     // Logout Handler
     @GetMapping("/logout")
-    public String logout(HttpSession session) {
+    public String logout(HttpSession session, RedirectAttributes redirectAttributes) {
+        String username = (String) session.getAttribute("customerUsername");
+        if (username == null) {
+            username = (String) session.getAttribute("adminUsername");
+        }
+        if (username == null) {
+            username = (String) session.getAttribute("staffUsername");
+        }
         session.invalidate();
+        if (username != null) {
+            redirectAttributes.addFlashAttribute("info", "Tạm biệt " + username + "! Hẹn gặp lại bạn.");
+        }
         return "redirect:/login";
     }
 }

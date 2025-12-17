@@ -13,15 +13,15 @@ public class FinalExamJvncApplication {
     public static void main(String[] args) {
         ConfigurableApplicationContext context = SpringApplication.run(FinalExamJvncApplication.class, args);
         
-        // Generate hash code for password "123456"
-//        PasswordEncoder passwordEncoder = context.getBean(PasswordEncoder.class);
-//        String password = "123456";
-//        String hashedPassword = passwordEncoder.encode(password);
+//         PasswordEncoder passwordEncoder = context.getBean(PasswordEncoder.class);
+//         String password = "123456"; // Thay đổi password ở đây nếu cần
+//         String hashedPassword = passwordEncoder.encode(password);
 //
-//        System.out.println("========================================");
-//        System.out.println("Password Hash Code for '123456':");
-//        System.out.println(hashedPassword);
-//        System.out.println("========================================");
+//         System.out.println("========================================");
+//         System.out.println("Password Hash Code for '" + password + "':");
+//         System.out.println(hashedPassword);
+//         System.out.println("========================================");
+//
     }
 
 }

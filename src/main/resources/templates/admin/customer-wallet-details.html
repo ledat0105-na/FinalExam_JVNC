@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chi tiết ví khách hàng | UCOP Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link th:href="@{/css/style.css}" rel="stylesheet">
+    <link th:href="@{/css/admin-layout.css}" rel="stylesheet">
+</head>
+<body class="admin-dashboard">
+    <div th:replace="~{fragments/admin-sidebar :: admin-sidebar}"></div>
+    
+    <main class="admin-main-content" id="mainContent">
+        <div th:replace="~{fragments/admin-header :: admin-header('Chi tiết ví khách hàng')}"></div>
+        
+        <div class="dashboard-content">
+<div class="container-fluid">
+    <div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+        <div>
+            <h2 class="fw-bold mb-1"><i class="bi bi-wallet2-fill me-2 text-info"></i>Chi tiết ví khách hàng</h2>
+            <p class="mb-0 opacity-75">Thông tin ví và lịch sử giao dịch của <strong th:text="${account.username}">customer</strong></p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="javascript:history.back();" class="btn btn-outline-secondary fw-bold shadow-sm">
+                <i class="bi bi-arrow-left me-2"></i>Quay lại
+            </a>
+            <a th:href="@{/admin/wallet/deposit(username=${account.username})}" class="btn btn-success fw-bold shadow-sm">
+                <i class="bi bi-plus-circle me-2"></i>Nạp tiền
+            </a>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-lg-4">
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="bg-info bg-opacity-10 rounded-circle p-3 me-3">
+                            <i class="bi bi-person-fill text-info fs-4"></i>
+                        </div>
+                        <div>
+                            <h5 class="fw-bold mb-0" th:text="${account.username}">customer</h5>
+                            <small class="text-muted" th:text="${account.email}">email</small>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="mb-3">
+                        <small class="text-muted d-block mb-1">Số dư hiện tại</small>
+                        <h3 class="fw-bold text-info mb-0">
+                            <span th:text="${#numbers.formatDecimal(balance != null ? balance : 0, 0, 'POINT', 0, 'POINT')}">0</span> đ
+                        </h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white border-bottom p-4">
+                    <h5 class="fw-bold mb-0"><i class="bi bi-clock-history me-2"></i>Lịch sử giao dịch</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0 align-middle">
+                            <thead class="table-light">
+                            <tr>
+                                <th class="fw-bold py-3 px-4">Thời gian</th>
+                                <th class="fw-bold py-3 px-4">Loại</th>
+                                <th class="fw-bold py-3 px-4">Mô tả</th>
+                                <th class="fw-bold py-3 px-4 text-end">Số tiền</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:if="${transactions == null || transactions.isEmpty()}" class="border-bottom">
+                                <td colspan="4" class="text-center text-muted py-5 px-4">
+                                    <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                                    Chưa có giao dịch nào
+                                </td>
+                            </tr>
+                            <tr th:each="transaction : ${transactions}" class="border-bottom">
+                                <td class="px-4 py-3">
+                                    <small class="text-muted" th:text="${transaction.createdAt != null ? #temporals.format(transaction.createdAt, 'dd/MM/yyyy HH:mm') : '-'}">-</small>
+                                </td>
+                                <td class="px-4 py-3">
+                                    <span th:if="${transaction.transactionType == 'TOPUP'}" 
+                                          class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-3 py-2 fw-bold">
+                                        <i class="bi bi-arrow-down-circle me-1"></i>Nạp tiền
+                                    </span>
+                                    <span th:if="${transaction.transactionType == 'PAYMENT'}" 
+                                          class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 px-3 py-2 fw-bold">
+                                        <i class="bi bi-arrow-up-circle me-1"></i>Thanh toán
+                                    </span>
+                                    <span th:if="${transaction.transactionType == 'REFUND'}" 
+                                          class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 px-3 py-2 fw-bold">
+                                        <i class="bi bi-arrow-counterclockwise me-1"></i>Hoàn tiền
+                                    </span>
+                                    <span th:if="${transaction.transactionType != 'TOPUP' && transaction.transactionType != 'PAYMENT' && transaction.transactionType != 'REFUND'}" 
+                                          class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 px-3 py-2 fw-bold">
+                                        <i class="bi bi-circle me-1"></i><span th:text="${transaction.transactionType}">Khác</span>
+                                    </span>
+                                </td>
+                                <td class="px-4 py-3">
+                                    <div class="text-dark fw-semibold" th:text="${transaction.description != null ? transaction.description : 'Không có mô tả'}">Mô tả</div>
+                                    <small class="text-muted" th:if="${transaction.orderNumber != null}" th:text="'Đơn hàng: ' + ${transaction.orderNumber}">Đơn hàng</small>
+                                </td>
+                                <td class="px-4 py-3 text-end">
+                                    <span th:if="${transaction.transactionType == 'TOPUP' || transaction.transactionType == 'REFUND'}" 
+                                          class="fw-bold text-success">
+                                        +<span th:text="${#numbers.formatDecimal(transaction.amount != null ? transaction.amount : 0, 0, 'POINT', 0, 'POINT')}">0</span> đ
+                                    </span>
+                                    <span th:if="${transaction.transactionType == 'PAYMENT'}" 
+                                          class="fw-bold text-danger">
+                                        -<span th:text="${#numbers.formatDecimal(transaction.amount != null ? transaction.amount : 0, 0, 'POINT', 0, 'POINT')}">0</span> đ
+                                    </span>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+        </div>
+    </main>
+    
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script th:src="@{/js/admin-layout.js}"></script>
+</body>
+</html>
+

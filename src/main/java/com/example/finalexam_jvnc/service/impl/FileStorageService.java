@@ -1,4 +1,4 @@
-package com.example.finalexam_jvnc.service;
+package com.example.finalexam_jvnc.service.impl;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;

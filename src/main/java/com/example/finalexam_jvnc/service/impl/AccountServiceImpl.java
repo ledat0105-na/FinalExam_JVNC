@@ -372,5 +372,10 @@ public class AccountServiceImpl implements AccountService {
         Account savedAccount = accountRepository.save(account);
         return convertToDTO(savedAccount);
     }
+
+    @Override
+    public Account getAccountByUsername(String username) {
+        return accountRepository.findByUsername(username).orElse(null);
+    }
 }
 

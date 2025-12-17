@@ -40,7 +40,14 @@ public class Item {
     private String description;
 
     @Column(length = 500)
-    private String imageUrl; // Path to product image
+    private String imageUrl; // Path to product image (legacy, for backward compatibility)
+
+    @Lob
+    @Column(name = "imageData", columnDefinition = "LONGBLOB")
+    private byte[] imageData; // Image data stored in database
+
+    @Column(length = 100)
+    private String imageContentType; // MIME type: image/jpeg, image/png, etc.
 
     private Boolean isActive = true;
 }
